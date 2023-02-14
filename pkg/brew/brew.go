@@ -1,6 +1,12 @@
 package brew
 
-import "github.com/hamza72x/brewc/pkg/util"
+import (
+	"fmt"
+	"os"
+
+	"github.com/hamza72x/brewc/pkg/util"
+	col "github.com/hamza72x/go-color"
+)
 
 type Brew struct {
 	bin string
@@ -35,9 +41,12 @@ func getBrewBinary() string {
 		}
 	}
 
-	if bin == "" {
-		panic("brew binary not found")
+	if len(bin) == 0 {
+		fmt.Printf("brew binary not found in any of the following paths: %+v", paths)
+		os.Exit(1)
 	}
+
+	fmt.Printf("brew binary found at: %s\n", col.Green(bin))
 
 	return bin
 }

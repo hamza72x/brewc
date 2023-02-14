@@ -4,47 +4,33 @@ package formula
 // GET https://formulae.brew.sh/api/formula/${FORMULA}.json
 // Example: curl -sL https://formulae.brew.sh/api/formula/ffmpeg.json | jq
 type Formula struct {
-	Name                    string         `json:"name"`
-	FullName                string         `json:"full_name"`
-	Tap                     string         `json:"tap"`
-	Oldname                 *string        `json:"oldname"`
-	Aliases                 *[]string      `json:"aliases"`
-	VersionedFormulae       *[]string      `json:"versioned_formulae"`
-	Desc                    string         `json:"desc"`
-	License                 string         `json:"license"`
-	Homepage                string         `json:"homepage"`
-	Versions                Versions       `json:"versions"`
-	Urls                    Urls           `json:"urls"`
-	Revision                int64          `json:"revision"`
-	VersionScheme           int64          `json:"version_scheme"`
-	Bottle                  Bottle         `json:"bottle"`
-	KegOnly                 bool           `json:"keg_only"`
-	KegOnlyReason           *string        `json:"keg_only_reason"`
-	Options                 *[]string      `json:"options"`
-	BuildDependencies       []string       `json:"build_dependencies"`
-	Dependencies            []string       `json:"dependencies"`
-	TestDependencies        *[]string      `json:"test_dependencies"`
-	RecommendedDependencies *[]string      `json:"recommended_dependencies"`
-	OptionalDependencies    *[]string      `json:"optional_dependencies"`
-	UsesFromMacos           *[]string      `json:"uses_from_macos"`
-	Requirements            *[]string      `json:"requirements"`
-	ConflictsWith           *[]string      `json:"conflicts_with"`
-	Caveats                 *string        `json:"caveats"`
-	Installed               []Installed    `json:"installed"`
-	LinkedKeg               string         `json:"linked_keg"`
-	Pinned                  bool           `json:"pinned"`
-	Outdated                bool           `json:"outdated"`
-	Deprecated              bool           `json:"deprecated"`
-	DeprecationDate         *string        `json:"deprecation_date"`
-	DeprecationReason       *string        `json:"deprecation_reason"`
-	Disabled                bool           `json:"disabled"`
-	DisableDate             *string        `json:"disable_date"`
-	DisableReason           *string        `json:"disable_reason"`
-	TapGitHead              string         `json:"tap_git_head"`
-	Variations              Variations     `json:"variations"`
-	Analytics               Analytics      `json:"analytics"`
-	AnalyticsLinux          AnalyticsLinux `json:"analytics-linux"`
-	GeneratedDate           string         `json:"generated_date"`
+	Name                    string    `json:"name"`
+	FullName                string    `json:"full_name"`
+	Tap                     string    `json:"tap"`
+	Desc                    string    `json:"desc"`
+	Versions                Versions  `json:"versions"`
+	Urls                    Urls      `json:"urls"`
+	Revision                int64     `json:"revision"`
+	VersionScheme           int64     `json:"version_scheme"`
+	Bottle                  Bottle    `json:"bottle"`
+	KegOnly                 bool      `json:"keg_only"`
+	KegOnlyReason           *string   `json:"keg_only_reason"`
+	BuildDependencies       []string  `json:"build_dependencies"`
+	Dependencies            []string  `json:"dependencies"`
+	TestDependencies        *[]string `json:"test_dependencies"`
+	RecommendedDependencies *[]string `json:"recommended_dependencies"`
+	OptionalDependencies    *[]string `json:"optional_dependencies"`
+	Requirements            *[]string `json:"requirements"`
+	ConflictsWith           *[]string `json:"conflicts_with"`
+	Caveats                 *string   `json:"caveats"`
+	Outdated                bool      `json:"outdated"`
+	Deprecated              bool      `json:"deprecated"`
+	DeprecationDate         *string   `json:"deprecation_date"`
+	DeprecationReason       *string   `json:"deprecation_reason"`
+	Disabled                bool      `json:"disabled"`
+	DisableDate             *string   `json:"disable_date"`
+	DisableReason           *string   `json:"disable_reason"`
+	GeneratedDate           string    `json:"generated_date"`
 }
 
 type Analytics struct {
@@ -136,6 +122,11 @@ type UrlsStable struct {
 	Checksum string  `json:"checksum"`
 }
 
+type UsesFromMacoClass struct {
+	Gperf  *string `json:"gperf,omitempty"`
+	Python *string `json:"python,omitempty"`
+}
+
 type Variations struct {
 	X8664_Linux X8664_Linux `json:"x86_64_linux"`
 }
@@ -148,4 +139,9 @@ type Versions struct {
 	Stable string `json:"stable"`
 	Head   string `json:"head"`
 	Bottle bool   `json:"bottle"`
+}
+
+type UsesFromMacoElement struct {
+	String            *string
+	UsesFromMacoClass *UsesFromMacoClass
 }
