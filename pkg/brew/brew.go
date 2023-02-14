@@ -12,6 +12,13 @@ func New() *Brew {
 	}
 }
 
+// InstallFormula installs the given formula.
+func (b *Brew) InstallFormula(name string) error {
+	// DECIDE: use export HOMEBREW_NO_AUTO_UPDATE=1 ??
+	return nil
+}
+
+// getBrewBinary returns the path to the brew binary.
 func getBrewBinary() string {
 	var bin string
 

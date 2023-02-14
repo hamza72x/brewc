@@ -50,7 +50,10 @@ func (b *BrewC) InstallFormula(name string) error {
 	return nil
 }
 
-func (b *BrewC) GetAllFormulas(name string) ([]formula.Formula, error) {
-	var list []formula.Formula
+// GetAllFormulas returns all of the formulas.
+func (b *BrewC) GetAllFormulas(name string) ([]*formula.Formula, error) {
+	var list []*formula.Formula
+	// DECIDE: should we use the github API to get the list of formulas?
+	// Or check local installation folder
 	return list, nil
 }
