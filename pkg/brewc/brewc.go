@@ -36,6 +36,10 @@ type BrewC struct {
 
 	// downloader is the downloader used to download the formula dependencies.
 	downloader *downloader.Downloader
+
+	// downloadedData tracks if certain formula is downloaded or not
+	// key: string is the formula name
+	downloadedData map[string]bool
 }
 
 // New returns a new BrewC instance.
@@ -71,27 +75,12 @@ func (b *BrewC) InstallFormula(name string) error {
 	return nil
 }
 
-// DownloadFormulas downloads all of the given formulas to brew's cache folder
-func (b *BrewC) DownloadFormulas(list []*formula.Formula) error {
-	var total = len(list)
-
-	fmt.Printf("total formulas to download: %s\n", col.Green(total))
-
-	for i, f := range list {
-		fmt.Print(col.Green(f.Name))
-
-		if i+1 != total {
-			fmt.Print(", ")
-		} else {
-			fmt.Println()
-		}
-	}
-	return nil
-}
-
 // GetAllFormulas returns all of the formulas.
 func (b *BrewC) GetAllFormulas(name string) ([]*formula.Formula, error) {
-	var list []*formula.Formula
+}
+
+// getAllFormulasRecursive returns all of the formulas recursively.
+func (b *BrewC) getAllFormulasRecursive(name string, list []*formula.Formula, data map[string]int, nestedCount int) error {
 
 	var wg sync.WaitGroup
 	var conn = make(chan int, b.threads)
@@ -99,7 +88,7 @@ func (b *BrewC) GetAllFormulas(name string) ([]*formula.Formula, error) {
 	var mainFormula, err = b.getFormulaJSON(name)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	list = append(list, mainFormula)
@@ -152,6 +141,24 @@ func (b *BrewC) getFormulaJSON(name string) (*formula.Formula, error) {
 	}
 
 	return &f, nil
+}
+
+// DownloadFormulas downloads all of the given formulas to brew's cache folder
+func (b *BrewC) DownloadFormulas(list []*formula.Formula) error {
+	var total = len(list)
+
+	fmt.Printf("total formulas to download: %s\n", col.Green(total))
+
+	for i, f := range list {
+		fmt.Print(col.Green(f.Name))
+
+		if i+1 != total {
+			fmt.Print(", ")
+		} else {
+			fmt.Println()
+		}
+	}
+	return nil
 }
 
 // doGET makes a GET request to the given URL.
