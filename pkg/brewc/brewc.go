@@ -71,6 +71,7 @@ func (b *BrewC) InstallFormula(name string) error {
 	return nil
 }
 
+// DownloadFormulas downloads all of the given formulas to brew's cache folder
 func (b *BrewC) DownloadFormulas(list []*formula.Formula) error {
 	var total = len(list)
 
@@ -117,6 +118,7 @@ func (b *BrewC) GetAllFormulas(name string) ([]*formula.Formula, error) {
 				return
 			}
 
+			fmt.Printf("discovered: %s\n", col.Info(dep))
 			list = append(list, f)
 
 			<-conn
@@ -152,6 +154,7 @@ func (b *BrewC) getFormulaJSON(name string) (*formula.Formula, error) {
 	return &f, nil
 }
 
+// doGET makes a GET request to the given URL.
 func (b *BrewC) doGET(url string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 

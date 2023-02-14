@@ -2,7 +2,6 @@ package brew
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/hamza72x/brewc/pkg/util"
 	col "github.com/hamza72x/go-color"
@@ -43,7 +42,8 @@ func getBrewBinary() string {
 
 	if len(bin) == 0 {
 		fmt.Printf("brew binary not found in any of the following paths: %+v", paths)
-		os.Exit(1)
+		// FIXME: exit with error
+		// os.Exit(1)
 	}
 
 	fmt.Printf("brew binary found at: %s\n", col.Green(bin))

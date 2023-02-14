@@ -38,6 +38,7 @@ func GetArchAndOSName() *ArchAndOS {
 	}
 
 	if data.Architecture == Arm64 && data.OSVersion == Linux {
+		// FIXME: uncomment this
 		// panic("arm64 linux is not supported yet")
 	}
 
