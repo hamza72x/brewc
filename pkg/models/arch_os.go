@@ -12,28 +12,25 @@ import (
 // ArchAndCodeName represents the architecture and os version.
 // used in brew files like: arm64_ventura, arm64_monterey, arm64_big_sur, ventura, monterey, big_sur, x86_64_linux
 type ArchAndCodeName struct {
-	Architecture Architecture
-	CodeName     CodeName
+	Architecture string
+	CodeName     string
 }
 
-type Architecture string
-type CodeName string
-
 const (
-	Arm64   Architecture = "arm64"
-	Aarch64 Architecture = "aarch64"
-	X86_64  Architecture = "x86_64"
+	Arm64   = "arm64"
+	Aarch64 = "aarch64"
+	X86_64  = "x86_64"
 )
 
 const (
-	Ventura  CodeName = "ventura"
-	Monterey CodeName = "monterey"
-	BigSur   CodeName = "big_sur"
-	Linux    CodeName = "linux"
+	Ventura  = "ventura"
+	Monterey = "monterey"
+	BigSur   = "big_sur"
+	Linux    = "linux"
 )
 
 var (
-	macOsVersionToCodeName = map[string]CodeName{
+	macOsVersionToCodeName = map[string]string{
 		"13": Ventura,
 		"12": Monterey,
 		"11": BigSur,
@@ -58,13 +55,13 @@ func GetArchAndOSName() *ArchAndCodeName {
 // Name returns the name of the arch and os.
 // example: arm64_ventura, arm64_monterey, arm64_big_sur, x86_64_linux
 func (a *ArchAndCodeName) Name() string {
-	full := string(a.Architecture) + "_" + string(a.CodeName)
+	full := a.Architecture + "_" + a.CodeName
 
 	if runtime.GOOS == "darwin" {
 		if a.Architecture == Arm64 {
 			return full
 		}
-		return string(a.CodeName)
+		return a.CodeName
 	}
 
 	return full
@@ -72,7 +69,7 @@ func (a *ArchAndCodeName) Name() string {
 
 // getArchName returns the arch name.
 // example: arm64, x86_64
-func getArchName() Architecture {
+func getArchName() string {
 
 	archs := []string{"arm64", "aarch64", "x86_64"}
 
@@ -87,12 +84,12 @@ func getArchName() Architecture {
 		panic("unknown arch: " + arch)
 	}
 
-	return Architecture(arch)
+	return arch
 }
 
 // getOSCodeName returns the os name.
 // example: ventura, monterey, big_sur, linux
-func getOSCodeName() CodeName {
+func getOSCodeName() string {
 
 	versions := []string{"ventura", "monterey", "big_sur", "linux"}
 
@@ -106,12 +103,12 @@ func getOSCodeName() CodeName {
 			panic("unknown os version: " + versionFull)
 		}
 
-		os = string(macOsVersionToCodeName[version[0]])
+		os = macOsVersionToCodeName[version[0]]
 	}
 
 	if !util.StrContains(versions, os) {
 		panic("unknown os version: " + os)
 	}
 
-	return CodeName(os)
+	return os
 }

@@ -44,15 +44,17 @@ type BrewC struct {
 
 // New returns a new BrewC instance.
 func New(githubToken string, threads int) *BrewC {
+	archAndCodeName := models.GetArchAndOSName()
+
 	return &BrewC{
 		threads:         threads,
-		archAndCodeName: models.GetArchAndOSName(),
+		archAndCodeName: archAndCodeName,
 		githubToken:     githubToken,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 		brew:       brew.New(),
-		downloader: downloader.New(),
+		downloader: downloader.New(archAndCodeName),
 	}
 }
 
@@ -79,7 +81,7 @@ func (b *BrewC) InstallFormula(name string) error {
 func (b *BrewC) GetAllFormulas(name string) (*formula.FormulaList, error) {
 	var list = formula.NewFormulaList()
 
-	var err = b.getAllFormulasRecursive(name, list, 0)
+	var err = b.setAllFormulasRecursive(name, list, 0)
 
 	if err != nil {
 		return nil, err
@@ -88,8 +90,8 @@ func (b *BrewC) GetAllFormulas(name string) (*formula.FormulaList, error) {
 	return list, nil
 }
 
-// getAllFormulasRecursive returns all of the formulas recursively.
-func (b *BrewC) getAllFormulasRecursive(name string, list *formula.FormulaList, nestedCount int) error {
+// setAllFormulasRecursive returns all of the formulas recursively.
+func (b *BrewC) setAllFormulasRecursive(name string, list *formula.FormulaList, nestedCount int) error {
 
 	var wg sync.WaitGroup
 	var conn = make(chan int, b.threads)
@@ -100,12 +102,9 @@ func (b *BrewC) getAllFormulasRecursive(name string, list *formula.FormulaList, 
 		return err
 	}
 
-	fmt.Println("BottleCache: ", mainFormula.GetBottleCachePath(string(b.archAndCodeName.CodeName)))
-	fmt.Println("Manifest: ", mainFormula.GetManifestCachePath())
-
 	// if the formula is already installed, then we don't need to install it again.
 	// that's also means that all of its dependencies are already installed too.
-	if mainFormula.IsInstalled() || mainFormula.HasDownloadCache() {
+	if mainFormula.IsInstalled() {
 		return nil
 	}
 
@@ -129,7 +128,7 @@ func (b *BrewC) getAllFormulasRecursive(name string, list *formula.FormulaList, 
 				return
 			}
 
-			if f.IsInstalled() || f.HasDownloadCache() {
+			if f.IsInstalled() {
 				return
 			}
 
@@ -138,7 +137,7 @@ func (b *BrewC) getAllFormulasRecursive(name string, list *formula.FormulaList, 
 				list.Add(f)
 			}
 
-			if err := b.getAllFormulasRecursive(dep, list, nestedCount+1); err != nil {
+			if err := b.setAllFormulasRecursive(dep, list, nestedCount+1); err != nil {
 				fmt.Printf("error getting nested formula %s: %v, %d", dep, err, nestedCount)
 				return
 			}
@@ -178,17 +177,22 @@ func (b *BrewC) getFormulaJSON(name string) (*formula.Formula, error) {
 // DownloadFormulas downloads all of the given formulas to brew's cache folder
 func (b *BrewC) DownloadFormulas(list *formula.FormulaList) error {
 
-	fmt.Printf("total formulas to download: %s\n", col.Green(list.Count()))
+	fmt.Printf("\n%s: %d\n", col.Green("ToBeInstalled Items"), list.Count())
+
+	wg := sync.WaitGroup{}
+	c := make(chan int, b.threads/2)
 
 	list.Iterate(func(index int, f *formula.Formula) {
-		fmt.Print(col.Green(f.Name))
-
-		if index+1 != list.Count() {
-			fmt.Print(", ")
-		} else {
-			fmt.Println()
-		}
+		go func(f *formula.Formula) {
+			wg.Add(1)
+			c <- 1
+			defer wg.Done()
+			defer func() { <-c }()
+			b.downloader.Download(f)
+		}(f)
 	})
+
+	wg.Wait()
 
 	return nil
 }

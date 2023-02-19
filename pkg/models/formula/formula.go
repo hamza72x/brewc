@@ -2,81 +2,10 @@ package formula
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/hamza72x/brewc/pkg/constant"
 	"github.com/hamza72x/brewc/pkg/util"
 )
-
-// FormulaList represents a list of formulas.
-// it will be linked-list
-type FormulaList struct {
-	head *FormulaNode
-	tail *FormulaNode
-	// key string: formula name
-	hasDataMap map[string]bool
-	count      int
-	// lock is used to make the list thread-safe
-	lock sync.RWMutex
-}
-
-// FormulaNode represents a node in the linked-list
-type FormulaNode struct {
-	Formula *Formula
-	Next    *FormulaNode
-}
-
-// NewFormulaList returns a new FormulaList instance.
-func NewFormulaList() *FormulaList {
-	return &FormulaList{
-		hasDataMap: make(map[string]bool),
-	}
-}
-
-func (list *FormulaList) HasFormula(f *Formula) bool {
-	if _, ok := list.hasDataMap[f.Name]; ok {
-		return true
-	}
-	return false
-}
-
-func (list *FormulaList) Count() int {
-	return list.count
-}
-
-func (list *FormulaList) Add(formula *Formula) {
-	list.lock.Lock()
-	defer list.lock.Unlock()
-
-	newNode := &FormulaNode{
-		Formula: formula,
-	}
-
-	if list.head == nil {
-		list.head = newNode
-		list.tail = newNode
-	} else {
-		list.tail.Next = newNode
-		list.tail = newNode
-	}
-
-	list.hasDataMap[formula.Name] = true
-	list.count++
-}
-
-// Iterate iterate over the full linked-list
-// and uses the callback function to do something
-// with the data
-func (list *FormulaList) Iterate(callback func(index int, formula *Formula)) {
-	current := list.head
-	index := 0
-
-	for current != nil {
-		callback(index, current.Formula)
-		current = current.Next
-		index++
-	}
-}
 
 // Formula represents a formula.
 // GET https://formulae.brew.sh/api/formula/${FORMULA}.json
@@ -222,6 +151,8 @@ type UsesFromMacoElement struct {
 	UsesFromMacoClass *UsesFromMacoClass
 }
 
+// GetBottleUrl returns the bottle url of the formula
+// example: https://ghcr.io/v2/homebrew/core/libraw/blobs/sha256:81a83bd632b57ca84ce11f0829942a8061c7a57d3568e6c20c54c919fa2c6111
 func (f *Formula) GetBottleUrl(osCodeName string) string {
 	files := f.Bottle.Stable.Files
 
@@ -245,11 +176,15 @@ func (f *Formula) GetBottleUrl(osCodeName string) string {
 	}
 }
 
+// GetManifestUrl returns the manifest url of the formula
+// example: https://ghcr.io/v2/homebrew/core/libraw/manifests/0.21.1
 func (f *Formula) GetManifestUrl() string {
 	// example: https://ghcr.io/v2/homebrew/core/libraw/manifests/0.21.1
 	return fmt.Sprintf("https://ghcr.io/v2/homebrew/core/%s/manifests/%s", f.Name, f.Versions.Stable)
 }
 
+// GetBottleCachePath returns the cache path of the bottle
+// example: /Users/xxx/Library/caches/Homebrew/Downloads/ff7fbec7b5a2946b14760f437f4e71201b7d0bdf2d68ebdcf4d308eece3e5061--luajit--2.1.0-beta3-20230104.2.ventura.bottle.tar.gz
 func (f *Formula) GetBottleCachePath(osCodeName string) string {
 	// sha256 of url
 	url := util.Sha256(f.GetBottleUrl(osCodeName))
@@ -261,6 +196,8 @@ func (f *Formula) GetBottleCachePath(osCodeName string) string {
 	return fmt.Sprintf("%s/%s--%s--%s.%s.bottle.tar.gz", constant.DirDownloadsCache(), string(url[:]), f.Name, f.Versions.Stable, osCodeName)
 }
 
+// GetManifestCachePath returns the cache path of the manifest
+// example: /Users/xxx/Library/caches/Homebrew/Downloads/dce2f2976851d7b9a08cc4fb5bcc12aab7cf40bbdfec362ef68672a15fa47e55--libvmaf-2.3.1.bottle_manifest.json
 func (f *Formula) GetManifestCachePath() string {
 	url := util.Sha256(f.GetManifestUrl())
 
@@ -271,12 +208,18 @@ func (f *Formula) GetManifestCachePath() string {
 	return fmt.Sprintf("%s/%s--%s-%s.bottle_manifest.json", constant.DirDownloadsCache(), url[:], f.Name, f.Versions.Stable)
 }
 
+// IsInstalled returns true if the formula is installed
+// based on the folder existence of /usr/local/Cellar/{name}/{version}
 func (f *Formula) IsInstalled() bool {
 	return util.DoesDirExist(fmt.Sprintf("%s/%s/%s", constant.DIR_CELLAR, f.Name, f.Versions.Stable))
 }
 
-func (f *Formula) HasDownloadCache() bool {
-	// dirCahe := constant.DirDownloadsCache()
+// HasBottleDownloadCache returns true if the bottle download cache exists
+func (f *Formula) HasBottleDownloadCache(osCodeName string) bool {
+	return util.DoesFileExist(f.GetBottleCachePath(osCodeName))
+}
 
-	return false
+// HasManifestDownloadCache returns true if the manifest download cache exists
+func (f *Formula) HasManifestDownloadCache() bool {
+	return util.DoesFileExist(f.GetManifestCachePath())
 }
