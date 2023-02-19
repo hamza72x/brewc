@@ -4,16 +4,12 @@ import (
 	"os"
 
 	"github.com/hamza72x/brewc/pkg/constant"
+	"github.com/hamza72x/brewc/pkg/models"
 	"github.com/spf13/cobra"
 )
 
-type optionalArgs struct {
-	githubToken string
-	threads     int
-}
-
 // _args holds the optional arguments passed to the command line.
-var _args = optionalArgs{}
+var _args = &models.OptionalArgs{}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -33,8 +29,9 @@ brewc install ffmpeg git wget curl # for multiple formulae`,
 }
 
 func init() {
-	installCmd.Flags().StringVarP(&_args.githubToken, "github-token", "g", "", "github token to use for downloading the formulae")
-	installCmd.Flags().IntVarP(&_args.threads, "threads", "t", 10, "number of threads to use for downloading the formulae")
+	installCmd.Flags().StringVarP(&_args.GithubToken, "github-token", "g", "", "github token to use for downloading the formulae")
+	installCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 10, "number of threads to use for downloading the formulae")
+	installCmd.Flags().BoolVarP(&_args.Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.AddCommand(installCmd)
 }
 

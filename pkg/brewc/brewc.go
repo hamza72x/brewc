@@ -40,21 +40,24 @@ type BrewC struct {
 	// downloadedData tracks if certain formula is downloaded or not
 	// key: string is the formula name
 	downloadedData map[string]bool
+
+	verbose bool
 }
 
 // New returns a new BrewC instance.
-func New(githubToken string, threads int) *BrewC {
+func New(args *models.OptionalArgs) *BrewC {
 	archAndCodeName := models.GetArchAndOSName()
 
 	return &BrewC{
-		threads:         threads,
+		threads:         args.Threads,
 		archAndCodeName: archAndCodeName,
-		githubToken:     githubToken,
+		githubToken:     args.GithubToken,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 		brew:       brew.New(),
-		downloader: downloader.New(archAndCodeName, githubToken),
+		downloader: downloader.New(archAndCodeName, args.GithubToken),
+		verbose:    args.Verbose,
 	}
 }
 
@@ -76,7 +79,7 @@ func (b *BrewC) InstallFormula(name string) error {
 	}
 
 	// install the formula by calling the `brew` command
-	return b.brew.InstallFormula(name)
+	return b.brew.InstallFormula(name, b.verbose)
 }
 
 // GetAllFormulas returns all of the formulas.

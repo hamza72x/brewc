@@ -21,7 +21,7 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 func runInstallCmd(cmd *cobra.Command, args []string) {
 	validateInstallCmdArgs()
 
-	brewc := brewc.New(_args.githubToken, _args.threads)
+	brewc := brewc.New(_args)
 
 	for _, name := range args {
 		fmt.Println("<<<<<<<<<<<< installing", col.Magenta(name), " >>>>>>>>>>>>")
@@ -36,11 +36,11 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 // validateInstallCmdArgs parses the command line flags and returns a cmdArg struct.
 func validateInstallCmdArgs() {
 
-	if len(_args.githubToken) == 0 {
-		_args.githubToken = os.Getenv("HOMEBREW_GITHUB_API_TOKEN")
+	if len(_args.GithubToken) == 0 {
+		_args.GithubToken = os.Getenv("HOMEBREW_GITHUB_API_TOKEN")
 	}
 
-	if len(_args.githubToken) == 0 {
+	if len(_args.GithubToken) == 0 {
 		fmt.Println("Either set the HOMEBREW_GITHUB_API_TOKEN env variable or pass the github-token flag")
 		flag.Usage()
 		os.Exit(1)

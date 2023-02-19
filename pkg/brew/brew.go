@@ -18,8 +18,13 @@ func New() *Brew {
 }
 
 // InstallFormula installs the given formula.
-func (b *Brew) InstallFormula(name string) error {
-	return util.ExecStandard(b.bin, "install", name, "-v")
+func (b *Brew) InstallFormula(name string, verbose bool) error {
+	var args = []string{"install", name}
+	if verbose {
+		args = append(args, "-v")
+	}
+
+	return util.ExecStandard(b.bin, args...)
 }
 
 // getBrewBinary returns the path to the brew binary.
