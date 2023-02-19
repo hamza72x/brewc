@@ -48,6 +48,7 @@ func (d *Downloader) Download(f *formula.Formula) error {
 
 func (d *Downloader) downloadFormula(f *formula.Formula, m *manifest.Manifest) error {
 	url := f.GetBottleUrl(d.archAndCodeName.CodeName)
+
 	bottlePath := f.GetBottleDownloadPath(d.archAndCodeName.CodeName)
 
 	fmt.Println("Downloading", f.Name, "from", col.Info(url))
@@ -60,6 +61,9 @@ func (d *Downloader) downloadFormula(f *formula.Formula, m *manifest.Manifest) e
 
 	req.Header.Set("Authorization", "Bearer QQ==")
 	// req.Header.Set("Authorization", "Bearer "+d.githubToken)
+	// Homebrew/4.0.1\ \(Macintosh\;\ Intel\ Mac\ OS\ X\ 13.2\)\ curl/7.86.0 --header Accept-Language:\ en
+	req.Header.Set("User-Agent", "Homebrew/4.0.1 (Macintosh; Intel Mac OS X 13.2) curl/7.86.0")
+	req.Header.Set("Accept-Language", "en")
 
 	resp, err := d.client.Do(req)
 
@@ -121,6 +125,8 @@ func (d *Downloader) downloadManifest(f *formula.Formula) error {
 
 	req.Header.Set("Accept", "application/vnd.oci.image.index.v1+json")
 	req.Header.Set("Authorization", "Bearer QQ==")
+	req.Header.Set("User-Agent", "Homebrew/4.0.1 (Macintosh; Intel Mac OS X 13.2) curl/7.86.0")
+	req.Header.Set("Accept-Language", "en")
 	// req.Header.Set("Authorization", "Bearer "+d.githubToken)
 
 	resp, err := d.client.Do(req)
