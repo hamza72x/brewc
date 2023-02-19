@@ -1,7 +1,6 @@
 package models
 
 type OptionalArgs struct {
-	GithubToken string
-	Verbose     bool
-	Threads     int
+	Verbose bool
+	Threads int
 }

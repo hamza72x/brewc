@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hamza72x/brewc/pkg/brew"
-	"github.com/hamza72x/brewc/pkg/downloader"
 	"github.com/hamza72x/brewc/pkg/models"
 	"github.com/hamza72x/brewc/pkg/models/formula"
 	"github.com/hamza72x/brewc/pkg/util"
@@ -23,19 +22,12 @@ type BrewC struct {
 
 	archAndCodeName *models.ArchAndCodeName
 
-	// githubToken is the token used to authenticate with the GitHub API.
-	// required permissions: read:packages
-	githubToken string
-
 	// httpClient is the http client used to make requests to the GitHub API.
 	// usually to calculate the download URL for a formula.
 	httpClient *http.Client
 
 	// brew is the brew command wrapper
 	brew *brew.Brew
-
-	// downloader is the downloader used to download the formula dependencies.
-	downloader *downloader.Downloader
 
 	// downloadedData tracks if certain formula is downloaded or not
 	// key: string is the formula name
@@ -51,13 +43,11 @@ func New(args *models.OptionalArgs) *BrewC {
 	return &BrewC{
 		threads:         args.Threads,
 		archAndCodeName: archAndCodeName,
-		githubToken:     args.GithubToken,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		brew:       brew.New(),
-		downloader: downloader.New(archAndCodeName, args.GithubToken),
-		verbose:    args.Verbose,
+		brew:    brew.New(),
+		verbose: args.Verbose,
 	}
 }
 
@@ -72,14 +62,36 @@ func (b *BrewC) InstallFormula(name string) error {
 	}
 
 	// download all of the formula & dependencies
-	err = b.DownloadFormulas(list)
+	// err = b.DownloadFormulas(list)
+	var wg sync.WaitGroup
+	var c = make(chan int, b.threads/2)
 
-	if err != nil {
+	list.IterateReverse(func(index int, f *formula.Formula) {
+		if f.Name == name {
+			return
+		}
+
+		wg.Add(1)
+		go func(f *formula.Formula) {
+			c <- 1
+			defer wg.Done()
+			defer func() { <-c }()
+			if err := b.brew.InstallFormula(f.Name, b.verbose); err != nil {
+				fmt.Printf("error installing formula: %s", err.Error())
+			}
+		}(f)
+	})
+
+	wg.Wait()
+
+	// last formula is the formula we want to install
+	if err := b.brew.InstallFormula(name, b.verbose); err != nil {
 		return err
 	}
 
 	// install the formula by calling the `brew` command
-	return b.brew.InstallFormula(name, b.verbose)
+	// return b.brew.InstallFormula(name, b.verbose)
+	return nil
 }
 
 // GetAllFormulas returns all of the formulas.
@@ -179,36 +191,9 @@ func (b *BrewC) getFormulaJSON(name string) (*formula.Formula, error) {
 	return &f, nil
 }
 
-// DownloadFormulas downloads all of the given formulas to brew's cache folder
-func (b *BrewC) DownloadFormulas(list *formula.FormulaList) error {
-
-	fmt.Printf("\n%s: %d\n", col.Green("ToBeInstalled Items"), list.Count())
-
-	wg := sync.WaitGroup{}
-	c := make(chan int, b.threads/2)
-
-	list.Iterate(func(index int, f *formula.Formula) {
-		wg.Add(1)
-		go func(f *formula.Formula) {
-			c <- 1
-			defer wg.Done()
-			defer func() { <-c }()
-			if err := b.downloader.Download(f); err != nil {
-				fmt.Printf("error downloading formula %s: %v", f.Name, err)
-			}
-		}(f)
-	})
-
-	wg.Wait()
-
-	return nil
-}
-
 // doGET makes a GET request to the given URL.
 func (b *BrewC) doGET(url string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
-
-	req.Header.Add("Authorization", "Bearer "+b.githubToken)
 
 	if err != nil {
 		return nil, err

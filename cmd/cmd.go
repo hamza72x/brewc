@@ -29,7 +29,6 @@ brewc install ffmpeg git wget curl # for multiple formulae`,
 }
 
 func init() {
-	installCmd.Flags().StringVarP(&_args.GithubToken, "github-token", "g", "", "github token to use for downloading the formulae")
 	installCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 10, "number of threads to use for downloading the formulae")
 	installCmd.Flags().BoolVarP(&_args.Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.AddCommand(installCmd)

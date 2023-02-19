@@ -17,6 +17,7 @@ type FormulaList struct {
 // FormulaNode represents a node in the linked-list
 type FormulaNode struct {
 	Formula *Formula
+	Prev    *FormulaNode
 	Next    *FormulaNode
 }
 
@@ -53,6 +54,7 @@ func (list *FormulaList) Add(formula *Formula) {
 		list.tail = newNode
 	} else {
 		list.tail.Next = newNode
+		newNode.Prev = list.tail
 		list.tail = newNode
 	}
 
@@ -70,6 +72,20 @@ func (list *FormulaList) Iterate(callback func(index int, formula *Formula)) {
 	for current != nil {
 		callback(index, current.Formula)
 		current = current.Next
+		index++
+	}
+}
+
+// IterateReverse iterate over the full linked-list
+// and uses the callback function to do something
+// with the data
+func (list *FormulaList) IterateReverse(callback func(index int, formula *Formula)) {
+	current := list.tail
+	index := 0
+
+	for current != nil {
+		callback(index, current.Formula)
+		current = current.Prev
 		index++
 	}
 }
