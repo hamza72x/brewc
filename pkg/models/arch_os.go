@@ -6,17 +6,18 @@ import (
 	"strings"
 
 	"github.com/hamza72x/brewc/pkg/util"
+	col "github.com/hamza72x/go-color"
 )
 
-// ArchAndOS represents the architecture and os version.
+// ArchAndCodeName represents the architecture and os version.
 // used in brew files like: arm64_ventura, arm64_monterey, arm64_big_sur, ventura, monterey, big_sur, x86_64_linux
-type ArchAndOS struct {
+type ArchAndCodeName struct {
 	Architecture Architecture
-	OSVersion    OSVersion
+	CodeName     CodeName
 }
 
 type Architecture string
-type OSVersion string
+type CodeName string
 
 const (
 	Arm64   Architecture = "arm64"
@@ -25,38 +26,45 @@ const (
 )
 
 const (
-	Ventura  OSVersion = "ventura"
-	Monterey OSVersion = "monterey"
-	BigSur   OSVersion = "big_sur"
-	Linux    OSVersion = "linux"
+	Ventura  CodeName = "ventura"
+	Monterey CodeName = "monterey"
+	BigSur   CodeName = "big_sur"
+	Linux    CodeName = "linux"
 )
 
-func GetArchAndOSName() *ArchAndOS {
-	data := &ArchAndOS{
+var (
+	macOsVersionToCodeName = map[string]CodeName{
+		"13": Ventura,
+		"12": Monterey,
+		"11": BigSur,
+	}
+)
+
+func GetArchAndOSName() *ArchAndCodeName {
+	data := &ArchAndCodeName{
 		Architecture: getArchName(),
-		OSVersion:    getOSName(),
+		CodeName:     getOSCodeName(),
 	}
 
-	if data.Architecture == Arm64 && data.OSVersion == Linux {
-		// FIXME: uncomment this
-		// panic("arm64 linux is not supported yet")
+	if data.Architecture == Arm64 && data.CodeName == Linux {
+		panic("arm64 linux is not supported yet")
 	}
 
-	fmt.Printf("Detected arch and os: %s\n", data.Name())
+	fmt.Printf("%s: %s\n", col.Green("Platform"), data.Name())
 
 	return data
 }
 
 // Name returns the name of the arch and os.
 // example: arm64_ventura, arm64_monterey, arm64_big_sur, x86_64_linux
-func (a *ArchAndOS) Name() string {
-	full := string(a.Architecture) + "_" + string(a.OSVersion)
+func (a *ArchAndCodeName) Name() string {
+	full := string(a.Architecture) + "_" + string(a.CodeName)
 
 	if runtime.GOOS == "darwin" {
 		if a.Architecture == Arm64 {
 			return full
 		}
-		return string(a.OSVersion)
+		return string(a.CodeName)
 	}
 
 	return full
@@ -68,13 +76,7 @@ func getArchName() Architecture {
 
 	archs := []string{"arm64", "aarch64", "x86_64"}
 
-	res, err := util.Exec("uname", "-m")
-
-	if err != nil {
-		panic(err)
-	}
-
-	arch := strings.ToLower(strings.TrimSpace(res))
+	arch := strings.ToLower(util.ExecMustWithTrim("uname", "-m"))
 
 	// if arch is aarch64, change it to arm64
 	if arch == "aarch64" {
@@ -88,23 +90,28 @@ func getArchName() Architecture {
 	return Architecture(arch)
 }
 
-// getOSName returns the os name.
+// getOSCodeName returns the os name.
 // example: ventura, monterey, big_sur, linux
-func getOSName() OSVersion {
+func getOSCodeName() CodeName {
 
 	versions := []string{"ventura", "monterey", "big_sur", "linux"}
 
-	res, err := util.Exec("uname", "-s")
+	os := strings.ToLower(util.ExecMustWithTrim("uname", "-s"))
 
-	if err != nil {
-		panic(err)
+	if os == "darwin" {
+		versionFull := util.ExecMustWithTrim("sw_vers", "-productVersion")
+		version := strings.Split(versionFull, ".")
+
+		if len(version) < 2 {
+			panic("unknown os version: " + versionFull)
+		}
+
+		os = string(macOsVersionToCodeName[version[0]])
 	}
-
-	os := strings.ToLower(strings.TrimSpace(res))
 
 	if !util.StrContains(versions, os) {
 		panic("unknown os version: " + os)
 	}
 
-	return OSVersion(os)
+	return CodeName(os)
 }

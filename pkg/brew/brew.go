@@ -19,7 +19,6 @@ func New() *Brew {
 
 // InstallFormula installs the given formula.
 func (b *Brew) InstallFormula(name string) error {
-	// DECIDE: use export HOMEBREW_NO_AUTO_UPDATE=1 ??
 	return nil
 }
 
@@ -46,7 +45,7 @@ func getBrewBinary() string {
 		// os.Exit(1)
 	}
 
-	fmt.Printf("brew binary found at: %s\n", col.Green(bin))
+	fmt.Printf("%s: %s\n", col.Green("Brew Binary"), bin)
 
 	return bin
 }

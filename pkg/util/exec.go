@@ -1,9 +1,29 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
+
+// ExecMust executes the given command and returns the output.
+// panics if there is an error.
+func ExecMustWithTrim(cmd string, args ...string) string {
+	return strings.TrimSpace(ExecMust(cmd, args...))
+}
+
+// ExecMust executes the given command and returns the output.
+// panics if there is an error.
+func ExecMust(cmd string, args ...string) string {
+	out, err := Exec(cmd, args...)
+
+	if err != nil {
+		panic(fmt.Sprintf("error while executing command: %s %s: %s", cmd, strings.Join(args, " "), err))
+	}
+
+	return out
+}
 
 // Exec executes the given command and returns the output.
 // it shouldn't be used for vast outputs.

@@ -21,7 +21,7 @@ type BrewC struct {
 	// threads is the number of concurrent goroutines used to download the formula dependencies.
 	threads int
 
-	archOSName *models.ArchAndOS
+	archAndCodeName *models.ArchAndCodeName
 
 	// githubToken is the token used to authenticate with the GitHub API.
 	// required permissions: read:packages
@@ -45,9 +45,9 @@ type BrewC struct {
 // New returns a new BrewC instance.
 func New(githubToken string, threads int) *BrewC {
 	return &BrewC{
-		threads:     threads,
-		archOSName:  models.GetArchAndOSName(),
-		githubToken: githubToken,
+		threads:         threads,
+		archAndCodeName: models.GetArchAndOSName(),
+		githubToken:     githubToken,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -76,11 +76,20 @@ func (b *BrewC) InstallFormula(name string) error {
 }
 
 // GetAllFormulas returns all of the formulas.
-func (b *BrewC) GetAllFormulas(name string) ([]*formula.Formula, error) {
+func (b *BrewC) GetAllFormulas(name string) (*formula.FormulaList, error) {
+	var list = formula.NewFormulaList()
+
+	var err = b.getAllFormulasRecursive(name, list, 0)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return list, nil
 }
 
 // getAllFormulasRecursive returns all of the formulas recursively.
-func (b *BrewC) getAllFormulasRecursive(name string, list []*formula.Formula, data map[string]int, nestedCount int) error {
+func (b *BrewC) getAllFormulasRecursive(name string, list *formula.FormulaList, nestedCount int) error {
 
 	var wg sync.WaitGroup
 	var conn = make(chan int, b.threads)
@@ -91,14 +100,27 @@ func (b *BrewC) getAllFormulasRecursive(name string, list []*formula.Formula, da
 		return err
 	}
 
-	list = append(list, mainFormula)
+	fmt.Println("BottleCache: ", mainFormula.GetBottleCachePath(string(b.archAndCodeName.CodeName)))
+	fmt.Println("Manifest: ", mainFormula.GetManifestCachePath())
+
+	// if the formula is already installed, then we don't need to install it again.
+	// that's also means that all of its dependencies are already installed too.
+	if mainFormula.IsInstalled() || mainFormula.HasDownloadCache() {
+		return nil
+	}
+
+	if !list.HasFormula(mainFormula) {
+		list.Add(mainFormula)
+	}
 
 	for _, dep := range mainFormula.Dependencies {
 		wg.Add(1)
 
 		go func(dep string) {
-			defer wg.Done()
 			conn <- 1
+
+			defer wg.Done()
+			defer func() { <-conn }()
 
 			f, err := b.getFormulaJSON(dep)
 
@@ -107,16 +129,26 @@ func (b *BrewC) getAllFormulasRecursive(name string, list []*formula.Formula, da
 				return
 			}
 
-			fmt.Printf("discovered: %s\n", col.Info(dep))
-			list = append(list, f)
+			if f.IsInstalled() || f.HasDownloadCache() {
+				return
+			}
 
-			<-conn
+			if !list.HasFormula(f) {
+				fmt.Printf("%s ", col.Info(dep))
+				list.Add(f)
+			}
+
+			if err := b.getAllFormulasRecursive(dep, list, nestedCount+1); err != nil {
+				fmt.Printf("error getting nested formula %s: %v, %d", dep, err, nestedCount)
+				return
+			}
+
 		}(dep)
 	}
 
 	wg.Wait()
 
-	return list, nil
+	return nil
 }
 
 // DECIDE: should we use the github API to get the list of formulas?
@@ -144,20 +176,20 @@ func (b *BrewC) getFormulaJSON(name string) (*formula.Formula, error) {
 }
 
 // DownloadFormulas downloads all of the given formulas to brew's cache folder
-func (b *BrewC) DownloadFormulas(list []*formula.Formula) error {
-	var total = len(list)
+func (b *BrewC) DownloadFormulas(list *formula.FormulaList) error {
 
-	fmt.Printf("total formulas to download: %s\n", col.Green(total))
+	fmt.Printf("total formulas to download: %s\n", col.Green(list.Count()))
 
-	for i, f := range list {
+	list.Iterate(func(index int, f *formula.Formula) {
 		fmt.Print(col.Green(f.Name))
 
-		if i+1 != total {
+		if index+1 != list.Count() {
 			fmt.Print(", ")
 		} else {
 			fmt.Println()
 		}
-	}
+	})
+
 	return nil
 }
 
