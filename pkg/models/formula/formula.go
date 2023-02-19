@@ -151,6 +151,12 @@ type UsesFromMacoElement struct {
 	UsesFromMacoClass *UsesFromMacoClass
 }
 
+// IsInstalled returns true if the formula is installed
+// based on the folder existence of /usr/local/Cellar/{name}/{version}
+func (f *Formula) IsInstalled() bool {
+	return util.DoesDirExist(fmt.Sprintf("%s/%s/%s", constant.Get().DirCellar, f.Name, f.Versions.Stable))
+}
+
 // GetBottleUrl returns the bottle url of the formula
 // example: https://ghcr.io/v2/homebrew/core/libraw/blobs/sha256:81a83bd632b57ca84ce11f0829942a8061c7a57d3568e6c20c54c919fa2c6111
 func (f *Formula) GetBottleUrl(osCodeName string) string {
@@ -176,16 +182,14 @@ func (f *Formula) GetBottleUrl(osCodeName string) string {
 	}
 }
 
-// GetManifestUrl returns the manifest url of the formula
-// example: https://ghcr.io/v2/homebrew/core/libraw/manifests/0.21.1
-func (f *Formula) GetManifestUrl() string {
-	// example: https://ghcr.io/v2/homebrew/core/libraw/manifests/0.21.1
-	return fmt.Sprintf("https://ghcr.io/v2/homebrew/core/%s/manifests/%s", f.Name, f.Versions.Stable)
+// HasBottleDownloadCache returns true if the bottle download cache exists
+func (f *Formula) HasBottleDownloadCache(osCodeName string) bool {
+	return util.DoesFileExist(f.GetBottleDownloadPath(osCodeName))
 }
 
-// GetBottleCachePath returns the cache path of the bottle
-// example: /Users/xxx/Library/caches/Homebrew/Downloads/ff7fbec7b5a2946b14760f437f4e71201b7d0bdf2d68ebdcf4d308eece3e5061--luajit--2.1.0-beta3-20230104.2.ventura.bottle.tar.gz
-func (f *Formula) GetBottleCachePath(osCodeName string) string {
+// GetBottleDownloadPath returns the cache path of the bottle
+// example: $HOMEBREW_DOWNLOADS_DIR/ff7fbec7b5a2946b14760f437f4e71201b7d0bdf2d68ebdcf4d308eece3e5061--luajit--2.1.0-beta3-20230104.2.ventura.bottle.tar.gz
+func (f *Formula) GetBottleDownloadPath(osCodeName string) string {
 	// sha256 of url
 	url := util.Sha256(f.GetBottleUrl(osCodeName))
 
@@ -193,33 +197,48 @@ func (f *Formula) GetBottleCachePath(osCodeName string) string {
 	// ff7fbec7b5a2946b14760f437f4e71201b7d0bdf2d68ebdcf4d308eece3e5061--luajit--2.1.0-beta3-20230104.2.ventura.bottle.tar.gz
 	// sha256_of_url--name--version.os_code_name.bottle.tar.gz
 
-	return fmt.Sprintf("%s/%s--%s--%s.%s.bottle.tar.gz", constant.DirDownloadsCache(), string(url[:]), f.Name, f.Versions.Stable, osCodeName)
+	return fmt.Sprintf("%s/%s--%s--%s.%s.bottle.tar.gz", constant.Get().DirDownloads, string(url[:]), f.Name, f.Versions.Stable, osCodeName)
 }
 
-// GetManifestCachePath returns the cache path of the manifest
-// example: /Users/xxx/Library/caches/Homebrew/Downloads/dce2f2976851d7b9a08cc4fb5bcc12aab7cf40bbdfec362ef68672a15fa47e55--libvmaf-2.3.1.bottle_manifest.json
-func (f *Formula) GetManifestCachePath() string {
+// GetBottleAliasPath returns the alias path of the bottle
+// example: $HOMEBREW_DOWNLOADS_DIR/aribb24--1.0.4
+func (f *Formula) GetBottleAliasPath() string {
+	// example:
+	// aribb24--1.0.4
+	// name--version
+
+	return fmt.Sprintf("%s/%s--%s", constant.Get().DirCaches, f.Name, f.Versions.Stable)
+}
+
+// GetManifestUrl returns the manifest url of the formula
+// example: https://ghcr.io/v2/homebrew/core/libraw/manifests/0.21.1
+func (f *Formula) GetManifestUrl() string {
+	// example: https://ghcr.io/v2/homebrew/core/libraw/manifests/0.21.1
+	return fmt.Sprintf("https://ghcr.io/v2/homebrew/core/%s/manifests/%s", f.Name, f.Versions.Stable)
+}
+
+// GetManifestDownloadPath returns the cache path of the manifest
+// example: $HOMEBREW_DOWNLOADS_DIR/dce2f2976851d7b9a08cc4fb5bcc12aab7cf40bbdfec362ef68672a15fa47e55--libvmaf-2.3.1.bottle_manifest.json
+func (f *Formula) GetManifestDownloadPath() string {
 	url := util.Sha256(f.GetManifestUrl())
 
 	// example:
 	// dce2f2976851d7b9a08cc4fb5bcc12aab7cf40bbdfec362ef68672a15fa47e55--libvmaf-2.3.1.bottle_manifest.json
 	// sha256_of_url--name--version.bottle_manifest.json
 
-	return fmt.Sprintf("%s/%s--%s-%s.bottle_manifest.json", constant.DirDownloadsCache(), url[:], f.Name, f.Versions.Stable)
+	return fmt.Sprintf("%s/%s--%s-%s.bottle_manifest.json", constant.Get().DirDownloads, url[:], f.Name, f.Versions.Stable)
 }
 
-// IsInstalled returns true if the formula is installed
-// based on the folder existence of /usr/local/Cellar/{name}/{version}
-func (f *Formula) IsInstalled() bool {
-	return util.DoesDirExist(fmt.Sprintf("%s/%s/%s", constant.DIR_CELLAR, f.Name, f.Versions.Stable))
-}
-
-// HasBottleDownloadCache returns true if the bottle download cache exists
-func (f *Formula) HasBottleDownloadCache(osCodeName string) bool {
-	return util.DoesFileExist(f.GetBottleCachePath(osCodeName))
+// GetManifestAliasPath returns the alias path of the manifest
+// example: $HOMEBREW_DOWNLOADS_DIR/aribb24_bottle_manifest--1.0.4
+func (f *Formula) GetManifestAliasPath() string {
+	// example:
+	// aribb24_bottle_manifest--1.0.4
+	// name_bottle_manifest--version
+	return fmt.Sprintf("%s/%s_bottle_manifest--%s", constant.Get().DirCaches, f.Name, f.Versions.Stable)
 }
 
 // HasManifestDownloadCache returns true if the manifest download cache exists
 func (f *Formula) HasManifestDownloadCache() bool {
-	return util.DoesFileExist(f.GetManifestCachePath())
+	return util.DoesFileExist(f.GetManifestDownloadPath())
 }

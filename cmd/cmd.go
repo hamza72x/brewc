@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/hamza72x/brewc/pkg/constant"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +40,10 @@ func init() {
 
 // Run executes the root command.
 func Run() {
+	constant.Initialize()
+
 	err := rootCmd.Execute()
+
 	if err != nil {
 		os.Exit(1)
 	}

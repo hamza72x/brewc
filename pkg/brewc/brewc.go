@@ -54,7 +54,7 @@ func New(githubToken string, threads int) *BrewC {
 			Timeout: 10 * time.Second,
 		},
 		brew:       brew.New(),
-		downloader: downloader.New(archAndCodeName),
+		downloader: downloader.New(archAndCodeName, githubToken),
 	}
 }
 
@@ -68,13 +68,15 @@ func (b *BrewC) InstallFormula(name string) error {
 		return err
 	}
 
+	// download all of the formula & dependencies
 	err = b.DownloadFormulas(list)
 
 	if err != nil {
 		return err
 	}
 
-	return nil
+	// install the formula by calling the `brew` command
+	return b.brew.InstallFormula(name)
 }
 
 // GetAllFormulas returns all of the formulas.
@@ -183,12 +185,14 @@ func (b *BrewC) DownloadFormulas(list *formula.FormulaList) error {
 	c := make(chan int, b.threads/2)
 
 	list.Iterate(func(index int, f *formula.Formula) {
+		wg.Add(1)
 		go func(f *formula.Formula) {
-			wg.Add(1)
 			c <- 1
 			defer wg.Done()
 			defer func() { <-c }()
-			b.downloader.Download(f)
+			if err := b.downloader.Download(f); err != nil {
+				fmt.Printf("error downloading formula %s: %v", f.Name, err)
+			}
 		}(f)
 	})
 

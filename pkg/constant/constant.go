@@ -1,15 +1,50 @@
 package constant
 
-import "os"
+import (
+	"fmt"
+	"os"
 
-const DIR_CELLAR = "/usr/local/Cellar"
+	"github.com/hamza72x/brewc/pkg/util"
+)
 
-// DirDownloadsCache returns the path to the downloads cache directory of brew.
-// e.g. /Users/hamza/Library/Caches/Homebrew/downloads
-func DirDownloadsCache() string {
-	homeDir, err := os.UserHomeDir()
+type Constant struct {
+	DirCellar    string
+	DirCaches    string
+	DirDownloads string
+}
+
+var instance *Constant
+
+func Initialize() {
+	dirHome, err := os.UserHomeDir()
+
 	if err != nil {
 		panic(err)
 	}
-	return homeDir + "/Library/Caches/Homebrew/downloads"
+
+	instance = &Constant{
+		DirCellar:    "/usr/local/Cellar",
+		DirCaches:    dirHome + "/Library/Caches/Homebrew",
+		DirDownloads: dirHome + "/Library/Caches/Homebrew/downloads",
+	}
+
+	// create dirs
+	var dirs = []string{
+		instance.DirCellar,
+		instance.DirCaches,
+		instance.DirDownloads,
+	}
+
+	for _, dir := range dirs {
+		if util.CreateDirIfNotExists(dir) != nil {
+			panic(fmt.Sprintf("Failed to create dir: %s", dir))
+		}
+	}
+}
+
+func Get() *Constant {
+	if instance == nil {
+		panic("Constant not initialized")
+	}
+	return instance
 }

@@ -28,6 +28,15 @@ func DoesDirExist(path string) bool {
 	return info.IsDir()
 }
 
+// CreateDirIfNotExists creates the given directory if it does not exist.
+func CreateDirIfNotExists(path string) error {
+	if DoesDirExist(path) {
+		return nil
+	}
+
+	return os.MkdirAll(path, os.ModePerm)
+}
+
 // WriteFile writes the given io.Reader to the given path.
 // and it overwrites the file if it already exists.
 func WriteFile(path string, reader io.Reader) error {

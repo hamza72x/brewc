@@ -19,7 +19,7 @@ func New() *Brew {
 
 // InstallFormula installs the given formula.
 func (b *Brew) InstallFormula(name string) error {
-	return nil
+	return util.ExecStandard(b.bin, "install", name, "-v")
 }
 
 // getBrewBinary returns the path to the brew binary.
