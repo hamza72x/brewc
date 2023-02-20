@@ -34,8 +34,8 @@ if [ "$arch" = "x86_64" ]; then
     arch="amd64"
 fi
 
-if [ "$goos" = "aarch64" ]; then
-    goos="arm64"
+if [ "$arch" = "aarch64" ]; then
+    arch="arm64"
 fi
 
 latest_tag=$(curl -sL https://api.github.com/repos/hamza72x/brewc/tags | jq -r '.[0].name' | cut -d 'v' -f 2)
