@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Debug install ffmpeg",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}",
+            "env": {},
+            // The -- here is key, telling delve to pass arguments after it to your code
+            "args": ["install", "ffmpeg"], 
+            // This controls the Working directory the code runs in, as my config.lgpriv.toml in my root 
+            // I want the working dir to be the workspace root
+            "cwd": "${workspaceRoot}", 
+            "showLog": true
+        }
+    ]
+}

@@ -6,14 +6,9 @@ import (
 	"time"
 
 	"github.com/hamza72x/brewc/pkg/brew"
+	"github.com/hamza72x/brewc/pkg/constant"
 	"github.com/hamza72x/brewc/pkg/models"
 	"github.com/hamza72x/brewc/pkg/models/formula"
-	col "github.com/hamza72x/go-color"
-)
-
-var (
-	greenArrow = col.Green("<__>")
-	redArrow   = col.Red("<__>")
 )
 
 // BrewC downloads all of the dependencies for a formula in concurrent goroutines.
@@ -53,7 +48,7 @@ func New(args *models.OptionalArgs) *BrewC {
 // Example: InstallFormula("ffmpeg")
 func (b *BrewC) InstallFormula(name string) error {
 
-	list, err := b.GetFormulaListV2(name, true)
+	list, err := b.GetFormulaListV2(name, false)
 
 	if err != nil {
 		return err
@@ -61,31 +56,13 @@ func (b *BrewC) InstallFormula(name string) error {
 
 	fmt.Println("")
 
-	list.Iterate(b.threads, func(f *formula.Formula) {
-		fmt.Printf("%s Working On: %s\n", greenArrow, f.Name)
-		time.Sleep(1 * time.Second)
+	list.IterateChildFirst(b.threads, func(f *formula.Formula) {
+		fmt.Printf("%s Working On: %s\n", constant.GreenArrow, f.Name)
+		if err := b.brew.InstallFormula(f.Name, b.args.Verbose); err != nil {
+			fmt.Printf("%s Error installing formula: %s\n", constant.RedArrow, err.Error())
+		}
 	})
 
-	// _, err := b.FormulasReverseIterate(name, false, func(index int, f *formula.Formula) {
-	// 	if f.Name == name {
-	// 		return
-	// 	}
-	// 	if err := b.brew.InstallFormula(f.Name, b.args.Verbose); err != nil {
-	// 		fmt.Printf("%s Error installing formula: %s\n", redArrow, err.Error())
-	// 	}
-	// })
-
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // last formula is the formula we want to install
-	// if err := b.brew.InstallFormula(name, b.args.Verbose); err != nil {
-	// 	return err
-	// }
-
-	// // install the formula by calling the `brew` command
-	// // return b.brew.InstallFormula(name, b.verbose)
 	return nil
 }
 
@@ -94,7 +71,7 @@ func (b *BrewC) InstallFormula(name string) error {
 func (b *BrewC) UninstallFormula(name string) error {
 
 	if err := b.brew.UninstallFormula(name, b.args.Verbose); err != nil {
-		fmt.Printf("%s Error uninstalling formula: %s\n", redArrow, err.Error())
+		fmt.Printf("%s Error uninstalling formula: %s\n", constant.RedArrow, err.Error())
 	}
 
 	return nil

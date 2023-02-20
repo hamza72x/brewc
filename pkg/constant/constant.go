@@ -5,7 +5,12 @@ import (
 	"os"
 
 	"github.com/hamza72x/brewc/pkg/util"
+	col "github.com/hamza72x/go-color"
 )
+
+var GreenArrow = col.Green("<==>")
+var BlueArrow = col.Info("<==>")
+var RedArrow = col.Red("<==>")
 
 type Constant struct {
 	DirCellar    string

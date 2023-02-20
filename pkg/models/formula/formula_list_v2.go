@@ -3,17 +3,12 @@ package formula
 import (
 	"fmt"
 	"sync"
-
-	col "github.com/hamza72x/go-color"
 )
 
 type FormulaListV2 struct {
 	count int
 
 	root *FormulaNodeV2
-
-	// if parent is ready to be installed or not
-	readyParents []string
 
 	// key string: formula name
 	hasDataMap map[string]bool
@@ -37,12 +32,21 @@ func (list *FormulaListV2) Root() *FormulaNodeV2 {
 	return list.root
 }
 
+func (node *FormulaNodeV2) FormulaName() string {
+	return node.formula.Name
+}
+
 func NewFormulaListV2(mainFormula *Formula) *FormulaListV2 {
-	return &FormulaListV2{
+	list := &FormulaListV2{
 		hasDataMap: make(map[string]bool),
 		lock:       &sync.RWMutex{},
 		root:       NewFormulaNodeV2(mainFormula),
 	}
+
+	list.hasDataMap[mainFormula.Name] = true
+	list.count++
+
+	return list
 }
 
 func NewFormulaNodeV2(formula *Formula) *FormulaNodeV2 {
@@ -60,99 +64,64 @@ func (list *FormulaListV2) hasFormula(f *Formula) bool {
 	return false
 }
 
-func (list *FormulaListV2) AddChild(parent *FormulaNodeV2, child *Formula) bool {
-	if list.hasFormula(child) {
+func (list *FormulaListV2) AddChild(parent *FormulaNodeV2, child *FormulaNodeV2) bool {
+	if list.hasFormula(child.formula) {
 		return false
 	}
 
 	list.lock.Lock()
 	defer list.lock.Unlock()
 
-	newNode := &FormulaNodeV2{
-		formula: child,
-	}
-
-	parent.children = append(parent.children, newNode)
+	parent.children = append(parent.children, child)
 	list.count++
-	list.hasDataMap[child.Name] = true
+	list.hasDataMap[child.FormulaName()] = true
+
+	// fmt.Printf("Adding %s as a child of %s\n", col.Red(child.FormulaName), col.Purple(parent.FormulaName()))
+	// fmt.Printf("Childrens of %s:", col.Red(parent.formula.Name))
+
+	// for _, child := range parent.children {
+	// 	fmt.Printf(" %s", col.Purple(child.formula.Name))
+	// }
+
+	// fmt.Println("")
 
 	return true
 }
 
-func (list *FormulaListV2) removeChild(parent *FormulaNodeV2, child *Formula) {
-	list.lock.Lock()
-	defer list.lock.Unlock()
-
-	for i, c := range parent.children {
-		if c.formula.Name == child.Name {
-			// remove the child from the parent
-			parent.children = append(parent.children[:i], parent.children[i+1:]...)
-			break
-		}
-	}
-
-	list.count--
-	delete(list.hasDataMap, child.Name)
+// IterateChildFirst iterates over the list in a child-first manner.
+// This means that the callback will be called only if there is no child of the given node.
+// Otherwise, the callback will be called after all of the children have been processed.
+func (list *FormulaListV2) IterateChildFirst(threads int, fn func(*Formula)) {
+	list.nodeIterator(list.root, fn)
 }
 
-func (list *FormulaListV2) Iterate(threads int, fn func(*Formula)) {
-	list.lock.RLock()
-	defer list.lock.RUnlock()
-
-	wg := &sync.WaitGroup{}
-	ch := make(chan int, threads)
-
-	list.nodeIterator(list.root, wg, ch, fn)
-
-	wg.Wait()
-}
-
-func (list *FormulaListV2) nodeIterator(node *FormulaNodeV2, wg *sync.WaitGroup, ch chan int, fn func(*Formula)) {
-	wg.Add(1)
-	ch <- 1
-
-	defer wg.Done()
-	defer func() { <-ch }()
-
-	fmt.Printf("Childrens of %s: ", col.Red(node.formula.Name))
-
-	for _, child := range node.children {
-		fmt.Printf("%s ", col.Red(child.formula.Name))
-	}
-
-	fmt.Println("")
-
-	for _, child := range node.children {
-		list.nodeIterator(child, wg, ch, fn)
-	}
+func (list *FormulaListV2) nodeIterator(node *FormulaNodeV2, fn func(*Formula)) {
 
 	// If there is no child, then we can call the callback
-	// afterwards remove that child from the parent
 	if len(node.children) == 0 {
-		// fmt.Println(col.Red("???"), "interator", node.formula.Name)
-		// fn(node.formula)
-		// list.removeChild(node, node.formula)
+		fn(node.formula)
 		return
 	}
 
-	// var wg2 sync.WaitGroup
-	// var ch2 = make(chan int, len(node.children))
+	var wg sync.WaitGroup
+	var ch = make(chan int, 5)
+
+	fmt.Printf("🛠  Resolving dependencies for %s 🛠\n", node.formula.Name)
 
 	// If there is a child, then we need to wait for all of the children to finish
-	// for _, child := range node.children {
-	// wg2.Add(1)
-	// fmt.Println(col.Black("hmm"), "queued", child.formula.Name, "parent", node.formula.Name)
-	// go func(child *FormulaNodeV2) {
-	// 	ch2 <- 1
-	// 	list.nodeIterator(child, wg, ch, fn)
-	// 	wg2.Done()
-	// 	<-ch2
-	// }(child)
-	// }
+	for _, child := range node.children {
+		wg.Add(1)
+		go func(child *FormulaNodeV2) {
+			ch <- 1
+			list.nodeIterator(child, fn)
+			wg.Done()
+			<-ch
+		}(child)
+	}
 
-	// wg2.Wait()
+	wg.Wait()
 
 	// After all the children are done, we can call the callback
-	// fn(node.formula)
-	// list.removeChild(node, node.formula)
+	fmt.Printf("🎉 Completed all dependencies of %s 🎉\n", node.formula.Name)
+	fn(node.formula)
 }
