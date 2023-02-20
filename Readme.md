@@ -37,4 +37,4 @@ brewc install ffmpeg wget curl git
 
 - installing ffmpeg took around `2:35` mintues with brewc and with brew it took around `4:15` minutes
 
-[![YouTube](https://img.youtube.com/vi/pWdNpOwtV_k/0.jpg)](https://youtu.be/pWdNpOwtV_k)
+[![YouTube](https://img.youtube.com/vi/VVfNutjzF64/0.jpg)](https://youtu.be/VVfNutjzF64)
