@@ -1,9 +1,38 @@
-## Requirements
-
-- Create a github personal access token
+## Brew concurrent download and install, around 50to 60% faster
 
 ## Install
 
 ```sh
 go install github.com/hamza72x/brewc@latest
 ```
+
+## Usage
+
+```
+Usage:
+  brewc [flags]
+  brewc [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  install     install a formula
+  reinstall   reinstall a formula
+  uninstall   uninstall a formula
+
+Flags:
+  -h, --help   help for brewc
+
+Use "brewc [command] --help" for more information about a command.
+➜  Downloads
+```
+
+## Example
+
+```
+brewc install ffmpeg wget curl git
+```
+
+## Compare
+
+- installing ffmpeg took around `2:35` mintues with brewc and with brew it took around `4:15` minutes
