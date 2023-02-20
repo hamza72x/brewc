@@ -36,11 +36,7 @@ func (b *Brew) UninstallFormula(name string, verbose bool) error {
 		args = append(args, "-v")
 	}
 
-	if err := b.Exec(args...); err != nil {
-		return err
-	}
-
-	return util.ExecStandard(b.bin, "autoremove")
+	return b.Exec(args...)
 }
 
 // ReinstallFormula reinstalls the given formula.

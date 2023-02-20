@@ -70,8 +70,25 @@ func (b *BrewC) InstallFormula(name string) error {
 // Example: UninstallFormula("ffmpeg")
 func (b *BrewC) UninstallFormula(name string) error {
 
-	if err := b.brew.UninstallFormula(name, b.args.Verbose); err != nil {
-		fmt.Printf("%s Error uninstalling formula: %s\n", constant.RedArrow, err.Error())
+	list, err := b.GetFormulaListV2(name, true)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("")
+
+	if b.args.DeleteUnusedDependencies {
+		list.IterateParentFirst(b.threads, func(f *formula.Formula) {
+			fmt.Printf("%s Removing: %s\n", constant.GreenArrow, f.Name)
+			if err := b.brew.UninstallFormula(f.Name, b.args.Verbose); err != nil && b.args.Verbose {
+				fmt.Printf("%s Error uninstalling formula: %s\n", constant.RedArrow, err.Error())
+			}
+		})
+	} else {
+		if err := b.brew.UninstallFormula(name, b.args.Verbose); err != nil {
+			fmt.Printf("%s Error uninstalling formula: %s\n", constant.RedArrow, err.Error())
+		}
 	}
 
 	return nil

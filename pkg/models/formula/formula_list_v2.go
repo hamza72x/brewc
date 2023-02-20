@@ -92,10 +92,10 @@ func (list *FormulaListV2) AddChild(parent *FormulaNodeV2, child *FormulaNodeV2)
 // This means that the callback will be called only if there is no child of the given node.
 // Otherwise, the callback will be called after all of the children have been processed.
 func (list *FormulaListV2) IterateChildFirst(threads int, fn func(*Formula)) {
-	list.nodeIterator(list.root, fn)
+	list.childFirstIterator(list.root, fn)
 }
 
-func (list *FormulaListV2) nodeIterator(node *FormulaNodeV2, fn func(*Formula)) {
+func (list *FormulaListV2) childFirstIterator(node *FormulaNodeV2, fn func(*Formula)) {
 
 	// If there is no child, then we can call the callback
 	if len(node.children) == 0 {
@@ -113,7 +113,7 @@ func (list *FormulaListV2) nodeIterator(node *FormulaNodeV2, fn func(*Formula)) 
 		wg.Add(1)
 		go func(child *FormulaNodeV2) {
 			ch <- 1
-			list.nodeIterator(child, fn)
+			list.childFirstIterator(child, fn)
 			wg.Done()
 			<-ch
 		}(child)
@@ -124,4 +124,27 @@ func (list *FormulaListV2) nodeIterator(node *FormulaNodeV2, fn func(*Formula)) 
 	// After all the children are done, we can call the callback
 	fmt.Printf("🎉 Completed all dependencies of %s 🎉\n", node.formula.Name)
 	fn(node.formula)
+}
+
+func (list *FormulaListV2) IterateParentFirst(threads int, fn func(*Formula)) {
+	list.parentFirstIterator(list.root, fn)
+}
+
+func (list *FormulaListV2) parentFirstIterator(node *FormulaNodeV2, fn func(*Formula)) {
+	fn(node.formula)
+
+	var wg sync.WaitGroup
+	var ch = make(chan int, 5)
+
+	for _, child := range node.children {
+		wg.Add(1)
+		go func(child *FormulaNodeV2) {
+			ch <- 1
+			list.parentFirstIterator(child, fn)
+			wg.Done()
+			<-ch
+		}(child)
+	}
+
+	wg.Wait()
 }
