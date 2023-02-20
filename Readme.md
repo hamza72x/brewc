@@ -2,10 +2,20 @@
 
 - the more dependencies a formula has, the more faster it will (compared to brew)
 
+## Requirements
+
+- [brew.sh](https://brew.sh/)
+
 ## Install
 
 ```sh
+# build from source
 go install github.com/hamza72x/brewc@latest
+
+# or use the install script
+curl -sL https://raw.githubusercontent.com/hamza72x/brewc/master/install.sh | sh
+
+# or check the releases page
 ```
 
 ## Usage
