@@ -4,6 +4,7 @@
 
 # Check if the user has curl, jq, cut installed
 green='\033[0;32m'
+red='\033[0;31m'
 end='\033[0m'
 
 echo -e "${green}Checking if curl, jq, cut are installed...${end}"
@@ -64,12 +65,19 @@ then
     exit 1
 fi
 
+# ask sudo user for extracting to /usr/local/bin
+echo ""
+echo -e "${red}need sudo permission to extract to /usr/local/bin${end}"
+sudo echo ""
+
 # download the latest version
-curl -L $url | tar -xz -C /usr/local/bin
+curl -L $url | sudo tar -xz -C /usr/local/bin
+sudo chmod +x /usr/local/bin/brewc
 
 # print usage
 echo ""
 echo -e "${green}Verifying installation...${end}"
+echo -e "Running: ${green}brewc --help${end}"
 echo ""
 
 if command -v brewc &> /dev/null
