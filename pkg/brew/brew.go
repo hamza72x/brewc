@@ -36,7 +36,11 @@ func (b *Brew) UninstallFormula(name string, verbose bool) error {
 		args = append(args, "-v")
 	}
 
-	return b.Exec(args...)
+	if err := b.Exec(args...); err != nil {
+		return err
+	}
+
+	return util.ExecStandard(b.bin, "autoremove")
 }
 
 func (b *Brew) Exec(args ...string) error {

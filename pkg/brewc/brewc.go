@@ -84,15 +84,5 @@ func (b *BrewC) UninstallFormula(name string) error {
 		fmt.Printf("%s Error uninstalling formula: %s\n", redArrow, err.Error())
 	}
 
-	_, err := b.FormulasReverseIterate(name, true, func(index int, f *formula.Formula) {
-		if err := b.brew.UninstallFormula(f.Name, b.args.Verbose); err != nil {
-			fmt.Printf("%s Error uninstalling formula: %s\n", redArrow, err.Error())
-		}
-	})
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
