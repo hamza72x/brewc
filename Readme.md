@@ -13,9 +13,10 @@
 go install github.com/hamza72x/brewc@latest
 
 # or use the install script
-curl -sL https://raw.githubusercontent.com/hamza72x/brewc/master/install.sh | sh
+bash <(curl -s https://raw.githubusercontent.com/hamza72x/brewc/master/install.sh) 
 
 # or check the releases page
+# https://github.com/hamza72x/brewc/releases
 ```
 
 ## Usage
