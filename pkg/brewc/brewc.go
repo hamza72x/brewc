@@ -86,3 +86,9 @@ func (b *BrewC) UninstallFormula(name string) error {
 
 	return nil
 }
+
+// ReinstallFormula uninstalls and then installs the given formula.
+// Example: ReinstallFormula("ffmpeg")
+func (b *BrewC) ReinstallFormula(name string) error {
+	return b.brew.ReinstallFormula(name, b.args.Verbose)
+}

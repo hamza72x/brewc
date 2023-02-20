@@ -38,12 +38,23 @@ brewc uninstall ffmpeg git wget curl # for multiple formulae`,
 	Run:  runUninstallCmd,
 }
 
+// reinstallCmd represents the reinstall command
+var reinstallCmd = &cobra.Command{
+	Use:   "reinstall",
+	Short: "reinstall a formula",
+	Example: `brewc reinstall ffmpeg # for single formulae
+brewc reinstall ffmpeg git wget curl # for multiple formulae`,
+	Args: cobra.MinimumNArgs(1),
+	Run:  runReinstallCmd,
+}
+
 func init() {
 	installCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 10, "number of threads to use for downloading the formulae")
 	installCmd.Flags().BoolVarP(&_args.Verbose, "verbose", "v", false, "verbose output")
 
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(uninstallCmd)
+	rootCmd.AddCommand(reinstallCmd)
 }
 
 // Run executes the root command.

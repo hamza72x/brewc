@@ -25,7 +25,7 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 		err := brewc.InstallFormula(name)
 
 		if err != nil {
-			fmt.Println("error:", err)
+			fmt.Println("Error:", err)
 		}
 	}
 }
@@ -41,7 +41,23 @@ func runUninstallCmd(cmd *cobra.Command, args []string) {
 		err := brewc.UninstallFormula(name)
 
 		if err != nil {
-			fmt.Println("error:", err)
+			fmt.Println("Error:", err)
+		}
+	}
+}
+
+// runReinstallCmd executes the reinstall command.
+// Example: brewc reinstall ffmpeg
+func runReinstallCmd(cmd *cobra.Command, args []string) {
+
+	brewc := brewc.New(_args)
+
+	for _, name := range args {
+		fmt.Println("<<<<<<<<<<<< reinstalling", col.Magenta(name), " >>>>>>>>>>>>")
+		err := brewc.ReinstallFormula(name)
+
+		if err != nil {
+			fmt.Println("Error:", err)
 		}
 	}
 }

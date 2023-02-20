@@ -43,6 +43,17 @@ func (b *Brew) UninstallFormula(name string, verbose bool) error {
 	return util.ExecStandard(b.bin, "autoremove")
 }
 
+// ReinstallFormula reinstalls the given formula.
+func (b *Brew) ReinstallFormula(name string, verbose bool) error {
+	var args = []string{"reinstall", name}
+
+	if verbose {
+		args = append(args, "-v")
+	}
+
+	return b.Exec(args...)
+}
+
 func (b *Brew) Exec(args ...string) error {
 	return util.ExecStandard(b.bin, args...)
 }
