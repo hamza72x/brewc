@@ -1,5 +1,7 @@
 ## brew concurrent downloader and installer, around 50%/60% faster with huge dependencies, for example: ffmpeg
 
+- the more dependencies a formula has, the more faster it will (compared to brew)
+
 ## Install
 
 ```sh
@@ -29,8 +31,8 @@ Use "brewc [command] --help" for more information about a command.
 
 ## Example
 
-```
-brewc install ffmpeg wget curl git
+```sh
+brewc install ffmpeg
 ```
 
 ## Compare
