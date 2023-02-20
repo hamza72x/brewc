@@ -1,4 +1,4 @@
-## Brew concurrent download and install, around 50to 60% faster
+## brew concurrent downloader and installer, around 50%/60% faster with huge dependencies, for example: ffmpeg
 
 ## Install
 
@@ -36,3 +36,5 @@ brewc install ffmpeg wget curl git
 ## Compare
 
 - installing ffmpeg took around `2:35` mintues with brewc and with brew it took around `4:15` minutes
+
+[![YouTube](https://img.youtube.com/vi/pWdNpOwtV_k/0.jpg)](https://youtu.be/pWdNpOwtV_k)
