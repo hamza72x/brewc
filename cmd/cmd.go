@@ -49,7 +49,7 @@ brewc reinstall ffmpeg git wget curl # for multiple formulae`,
 }
 
 func init() {
-	installCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 10, "number of threads to use for downloading the formulae")
+	installCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 5, "number of threads to use for downloading the formulae")
 	installCmd.Flags().BoolVarP(&_args.Verbose, "verbose", "v", false, "verbose output")
 
 	rootCmd.AddCommand(installCmd)

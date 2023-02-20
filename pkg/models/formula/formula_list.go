@@ -17,8 +17,8 @@ type FormulaList struct {
 // FormulaNode represents a node in the linked-list
 type FormulaNode struct {
 	Formula *Formula
-	Prev    *FormulaNode
-	Next    *FormulaNode
+	prev    *FormulaNode
+	next    *FormulaNode
 }
 
 // NewFormulaList returns a new FormulaList instance.
@@ -53,8 +53,8 @@ func (list *FormulaList) Add(formula *Formula) {
 		list.head = newNode
 		list.tail = newNode
 	} else {
-		list.tail.Next = newNode
-		newNode.Prev = list.tail
+		list.tail.next = newNode
+		newNode.prev = list.tail
 		list.tail = newNode
 	}
 
@@ -71,7 +71,7 @@ func (list *FormulaList) Iterate(callback func(index int, formula *Formula)) {
 
 	for current != nil {
 		callback(index, current.Formula)
-		current = current.Next
+		current = current.next
 		index++
 	}
 }
@@ -85,7 +85,7 @@ func (list *FormulaList) IterateReverse(callback func(index int, formula *Formul
 
 	for current != nil {
 		callback(index, current.Formula)
-		current = current.Prev
+		current = current.prev
 		index++
 	}
 }

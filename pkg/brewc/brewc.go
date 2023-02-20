@@ -53,26 +53,39 @@ func New(args *models.OptionalArgs) *BrewC {
 // Example: InstallFormula("ffmpeg")
 func (b *BrewC) InstallFormula(name string) error {
 
-	_, err := b.FormulasReverseIterate(name, false, func(index int, f *formula.Formula) {
-		if f.Name == name {
-			return
-		}
-		if err := b.brew.InstallFormula(f.Name, b.args.Verbose); err != nil {
-			fmt.Printf("%s Error installing formula: %s\n", redArrow, err.Error())
-		}
-	})
+	list, err := b.GetFormulaListV2(name, true)
 
 	if err != nil {
 		return err
 	}
 
-	// last formula is the formula we want to install
-	if err := b.brew.InstallFormula(name, b.args.Verbose); err != nil {
-		return err
-	}
+	fmt.Println("")
 
-	// install the formula by calling the `brew` command
-	// return b.brew.InstallFormula(name, b.verbose)
+	list.Iterate(b.threads, func(f *formula.Formula) {
+		fmt.Printf("%s Working On: %s\n", greenArrow, f.Name)
+		time.Sleep(1 * time.Second)
+	})
+
+	// _, err := b.FormulasReverseIterate(name, false, func(index int, f *formula.Formula) {
+	// 	if f.Name == name {
+	// 		return
+	// 	}
+	// 	if err := b.brew.InstallFormula(f.Name, b.args.Verbose); err != nil {
+	// 		fmt.Printf("%s Error installing formula: %s\n", redArrow, err.Error())
+	// 	}
+	// })
+
+	// if err != nil {
+	// 	return err
+	// }
+
+	// // last formula is the formula we want to install
+	// if err := b.brew.InstallFormula(name, b.args.Verbose); err != nil {
+	// 	return err
+	// }
+
+	// // install the formula by calling the `brew` command
+	// // return b.brew.InstallFormula(name, b.verbose)
 	return nil
 }
 
