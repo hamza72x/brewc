@@ -25,6 +25,21 @@ func (b *Brew) InstallFormula(name string, verbose bool) error {
 		args = append(args, "-v")
 	}
 
+	return b.Exec(args...)
+}
+
+// UninstallFormula uninstalls the given formula.
+func (b *Brew) UninstallFormula(name string, verbose bool) error {
+	var args = []string{"uninstall", name}
+
+	if verbose {
+		args = append(args, "-v")
+	}
+
+	return b.Exec(args...)
+}
+
+func (b *Brew) Exec(args ...string) error {
 	return util.ExecStandard(b.bin, args...)
 }
 

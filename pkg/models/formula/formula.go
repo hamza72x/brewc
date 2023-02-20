@@ -161,35 +161,25 @@ func (f *Formula) IsInstalled() bool {
 // example: https://ghcr.io/v2/homebrew/core/libraw/blobs/sha256:81a83bd632b57ca84ce11f0829942a8061c7a57d3568e6c20c54c919fa2c6111
 func (f *Formula) GetBottleUrl(osCodeName string) string {
 	files := f.Bottle.Stable.Files
-	url := "https://pkg-containers.githubusercontent.com/ghcr1/blobs/sha256:"
-	sha256 := ""
 
 	switch osCodeName {
 	case "arm64_ventura":
-		sha256 = files.Arm64Ventura.Sha256
-		// return files.Arm64Ventura.URL
+		return files.Arm64Ventura.URL
 	case "arm64_monterey":
-		sha256 = files.Arm64Monterey.Sha256
-		// return files.Arm64Monterey.URL
+		return files.Arm64Monterey.URL
 	case "arm64_big_sur":
-		sha256 = files.Arm64BigSur.Sha256
-		// return files.Arm64BigSur.URL
+		return files.Arm64BigSur.URL
 	case "ventura":
 		return files.Ventura.URL
 	case "monterey":
-		sha256 = files.Monterey.Sha256
-		// return files.Monterey.URL
+		return files.Monterey.URL
 	case "big_sur":
-		sha256 = files.BigSur.Sha256
-		// return files.BigSur.URL
+		return files.BigSur.URL
 	case "x86_64_linux":
-		sha256 = files.X8664_Linux.Sha256
-		// return files.X8664_Linux.URL
+		return files.X8664_Linux.URL
 	default:
 		panic(fmt.Sprintf("unknown os code name: %s", osCodeName))
 	}
-
-	return url + sha256
 }
 
 // HasBottleDownloadCache returns true if the bottle download cache exists

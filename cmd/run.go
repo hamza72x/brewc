@@ -29,3 +29,19 @@ func runInstallCmd(cmd *cobra.Command, args []string) {
 		}
 	}
 }
+
+// runUninstallCmd executes the uninstall command.
+// Example: brewc uninstall ffmpeg
+func runUninstallCmd(cmd *cobra.Command, args []string) {
+
+	brewc := brewc.New(_args)
+
+	for _, name := range args {
+		fmt.Println("<<<<<<<<<<<< uninstalling", col.Magenta(name), " >>>>>>>>>>>>")
+		err := brewc.UninstallFormula(name)
+
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+	}
+}
