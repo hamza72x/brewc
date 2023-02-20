@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	greenArrow = col.Green("==>")
-	redArrow   = col.Red("==>")
+	greenArrow = col.Green("<__>")
+	redArrow   = col.Red("<__>")
 )
 
 // BrewC downloads all of the dependencies for a formula in concurrent goroutines.
