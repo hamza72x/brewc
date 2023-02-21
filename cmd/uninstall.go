@@ -23,7 +23,7 @@ func init() {
 
 	uninstallCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 5, "number of threads to use for downloading the formulae")
 	uninstallCmd.Flags().BoolVarP(&_args.Verbose, "verbose", "v", false, "verbose output")
-	uninstallCmd.Flags().BoolVarP(&_args.DeleteUnusedDependencies, "delete-unused-dependencies", "d", true, "delete unused dependencies after uninstalling a formula")
+	uninstallCmd.Flags().BoolVarP(&_args.DeleteUnusedDependencies, "delete-unused-dependencies", "d", false, "delete unused dependencies after uninstalling a formula")
 }
 
 // runUninstallCmd executes the uninstall command.
