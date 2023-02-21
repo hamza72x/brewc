@@ -52,6 +52,7 @@ func (b *BrewC) InstallFormula(name string) error {
 		IncludeInstalled: false,
 		DependencyLevel:  -1,
 		Threads:          b.threads,
+		Unique:           true,
 	})
 
 	if err != nil {
