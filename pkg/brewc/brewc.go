@@ -61,9 +61,11 @@ func (b *BrewC) InstallFormula(name string) error {
 	fmt.Println("")
 
 	list.IterateChildFirst(b.threads, func(f *formula.Formula) {
+
 		fmt.Printf("%s Working On: %s\n", constant.GreenArrow, f.Name)
+
 		if err := b.brew.InstallFormula(f.Name, b.args.Verbose); err != nil {
-			fmt.Printf("%s Error installing formula: %s\n", constant.RedArrow, err.Error())
+			fmt.Printf("%s Error installing formula (%s): %s\n", constant.RedArrow, f.Name, err.Error())
 		}
 	})
 

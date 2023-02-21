@@ -155,6 +155,7 @@ func (list *FormulaList) AddChild(parent *FormulaNode, child *FormulaNode, keepU
 // This means that the callback will be called only if there is no child of the given node.
 // Otherwise, the callback will be called after all of the children have been processed.
 func (list *FormulaList) IterateChildFirst(threads int, fn func(*Formula)) {
+	list.iteratorChannelCount = 0
 	list.childFirstIterator(list.root, fn)
 }
 
@@ -166,10 +167,19 @@ func (list *FormulaList) childFirstIterator(node *FormulaNode, fn func(*Formula)
 		return
 	}
 
+	var threads = 5
+
+	if list.iteratorChannelCount >= list.threads {
+		threads = 1
+	}
+
+	list.iteratorChannelCount += threads
+
 	var wg sync.WaitGroup
-	var ch = make(chan int, list.threads)
+	var ch = make(chan int, threads)
 
 	fmt.Printf("🛠  Resolving dependencies for %s 🛠\n", node.formula.Name)
+	list.printActiveThreads()
 
 	// If there is a child, then we need to wait for all of the children to finish
 	for _, child := range node.children {
@@ -183,6 +193,7 @@ func (list *FormulaList) childFirstIterator(node *FormulaNode, fn func(*Formula)
 	}
 
 	wg.Wait()
+	list.iteratorChannelCount -= threads
 
 	// After all the children are done, we can call the callback
 	fmt.Printf("🎉 Completed all dependencies of %s 🎉\n", node.formula.Name)
@@ -191,14 +202,25 @@ func (list *FormulaList) childFirstIterator(node *FormulaNode, fn func(*Formula)
 
 // IterateParentFirst iterates over the list in a parent-first manner.
 func (list *FormulaList) IterateParentFirst(threads int, fn func(*Formula)) {
+	list.iteratorChannelCount = 0
 	list.parentFirstIterator(list.root, fn)
 }
 
 func (list *FormulaList) parentFirstIterator(node *FormulaNode, fn func(*Formula)) {
 	fn(node.formula)
 
+	var threads = 5
+
+	if list.iteratorChannelCount >= list.threads {
+		threads = 1
+	}
+
+	list.iteratorChannelCount += threads
+
 	var wg sync.WaitGroup
-	var ch = make(chan int, list.threads)
+	var ch = make(chan int, threads)
+
+	list.printActiveThreads()
 
 	for _, child := range node.children {
 		wg.Add(1)
@@ -211,6 +233,11 @@ func (list *FormulaList) parentFirstIterator(node *FormulaNode, fn func(*Formula
 	}
 
 	wg.Wait()
+	list.iteratorChannelCount -= threads
+}
+
+func (list *FormulaList) printActiveThreads() {
+	fmt.Printf("🧶 Active Threads: %d 🧶\n", list.iteratorChannelCount)
 }
 
 // DECIDE: should we use the github API to get the list of formulas?

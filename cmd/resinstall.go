@@ -22,7 +22,7 @@ func init() {
 
 	rootCmd.AddCommand(reinstallCmd)
 
-	reinstallCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 5, "number of threads to use for downloading the formulae")
+	reinstallCmd.Flags().IntVarP(&_args.Threads, "threads", "t", 10, "number of threads to use for downloading the formulae")
 	reinstallCmd.Flags().BoolVarP(&_args.Verbose, "verbose", "v", false, "verbose output")
 }
 

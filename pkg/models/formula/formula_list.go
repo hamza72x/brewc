@@ -20,6 +20,8 @@ type FormulaList struct {
 	httpClient *http.Client
 
 	threads int
+
+	iteratorChannelCount int
 }
 
 func newFormulaList(mainFormula *Formula, threads int) *FormulaList {
