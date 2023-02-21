@@ -51,6 +51,7 @@ func (b *BrewC) InstallFormula(name string) error {
 	list, err := formula.GetFormulaList(name, &formula.GetFormulaListOpts{
 		IncludeInstalled: false,
 		DependencyLevel:  -1,
+		Threads:          b.threads,
 	})
 
 	if err != nil {
@@ -73,15 +74,21 @@ func (b *BrewC) InstallFormula(name string) error {
 // Example: UninstallFormula("ffmpeg")
 func (b *BrewC) UninstallFormula(name string) error {
 
-	if !b.args.DeleteUnusedDependencies {
+	if !b.args.DeleteUnusedDependencies && !b.args.DeleteAllNestedDependencies {
 		return b.brew.UninstallFormula(name, b.args.Verbose)
 	}
 
-	fmt.Println("bo???????????????")
+	dependencyLevel := 1
+
+	if b.args.DeleteAllNestedDependencies {
+		dependencyLevel = -1
+	}
 
 	list, err := formula.GetFormulaList(name, &formula.GetFormulaListOpts{
 		IncludeInstalled: true,
-		DependencyLevel:  1,
+		DependencyLevel:  dependencyLevel,
+		Threads:          b.threads,
+		Unique:           true,
 	})
 
 	if err != nil {

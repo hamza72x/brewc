@@ -15,9 +15,17 @@ import (
 type GetFormulaListOpts struct {
 	// default is false
 	IncludeInstalled bool
+
 	// default is 1
 	// -1 means all the dependencies
 	DependencyLevel int
+
+	// default is 5
+	Threads int
+
+	// only unique formulas
+	// default is false
+	Unique bool
 }
 
 // GetFormulaList returns a list of all the formulae
@@ -33,9 +41,15 @@ func GetFormulaList(name string, opts *GetFormulaListOpts) (*FormulaList, error)
 		return nil, err
 	}
 
-	list := newFormulaList(mainFormula)
+	fmt.Printf("%s Getting dependencies for %s\n", constant.GreenArrow, col.Info(name))
+	fmt.Printf("%s Dependency level: %d\n\n", constant.GreenArrow, opts.DependencyLevel)
 
+	list := newFormulaList(mainFormula, opts.Threads)
+
+	fmt.Printf("Formula: %s, deps: ", col.Info(name))
 	err = list.setNodesRecursive(name, list.root, opts, 1)
+
+	fmt.Printf("\n\n%s Discovered %d dependencies\n", constant.GreenArrow, list.Count())
 
 	if err != nil {
 		return nil, err
@@ -64,7 +78,9 @@ func (list *FormulaList) setNodesRecursive(name string, parentNode *FormulaNode,
 
 	// if it's the main formula, we don't need to add it as a child of itself.
 	if parentNode != list.root {
-		list.AddChild(parentNode, newFormulaNode(mainFormula))
+		if list.AddChild(parentNode, newFormulaNode(mainFormula), opts.Unique) {
+			fmt.Printf("\nFormula: %s, deps: ", col.Info(name))
+		}
 	}
 
 	for _, dep := range mainFormula.Dependencies {
@@ -89,7 +105,7 @@ func (list *FormulaList) setNodesRecursive(name string, parentNode *FormulaNode,
 
 			newNode := newFormulaNode(f)
 
-			if list.AddChild(parentNode, newNode) {
+			if list.AddChild(parentNode, newNode, opts.Unique) {
 				fmt.Printf("%s ", col.Info(dep))
 			}
 
@@ -99,7 +115,6 @@ func (list *FormulaList) setNodesRecursive(name string, parentNode *FormulaNode,
 
 			if err := list.setNodesRecursive(dep, newNode, opts, level+1); err != nil {
 				fmt.Printf("%s Error getting nested formula %s: %v", constant.RedArrow, dep, err)
-				return
 			}
 
 		}(dep)
@@ -110,41 +125,30 @@ func (list *FormulaList) setNodesRecursive(name string, parentNode *FormulaNode,
 	return nil
 }
 
-func (list *FormulaList) AddChild(parent *FormulaNode, child *FormulaNode) bool {
+func (list *FormulaList) hasFormula(formula *Formula) bool {
+	list.lock.RLock()
+	defer list.lock.RUnlock()
+
+	if val, ok := list.uniques[formula.Name]; ok && val {
+		return true
+	}
+
+	return false
+}
+
+func (list *FormulaList) AddChild(parent *FormulaNode, child *FormulaNode, keepUniqueInList bool) bool {
+	if keepUniqueInList && list.hasFormula(child.formula) {
+		return false
+	}
+
 	list.lock.Lock()
 	defer list.lock.Unlock()
 
-	list.workStatuses[child.formula.Name] = notStarted
+	list.uniques[child.formula.Name] = true
 	parent.children = append(parent.children, child)
 	list.count++
 
 	return true
-}
-
-func (list *FormulaList) updateWorkStatus(node *FormulaNode, status formulaWorkStatus) {
-	list.lock.Lock()
-	defer list.lock.Unlock()
-
-	list.workStatuses[node.formula.Name] = status
-}
-
-func (list *FormulaList) getWorkStatus(node *FormulaNode) formulaWorkStatus {
-	list.lock.RLock()
-	defer list.lock.RUnlock()
-
-	return list.workStatuses[node.formula.Name]
-}
-
-func (list *FormulaList) waitForAllChildrenToBeWorked(node *FormulaNode) {
-	list.lock.RLock()
-	defer list.lock.RUnlock()
-
-	for _, child := range node.children {
-		for list.workStatuses[child.formula.Name] != worked {
-			fmt.Printf("Waiting for %s to be worked", child.formula.Name)
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
 }
 
 // IterateChildFirst iterates over the list in a child-first manner.
@@ -158,17 +162,12 @@ func (list *FormulaList) childFirstIterator(node *FormulaNode, fn func(*Formula)
 
 	// If there is no child, then we can call the callback
 	if len(node.children) == 0 {
-		if list.getWorkStatus(node) != notStarted {
-			return
-		}
-		list.updateWorkStatus(node, working)
 		fn(node.formula)
-		list.updateWorkStatus(node, worked)
 		return
 	}
 
 	var wg sync.WaitGroup
-	var ch = make(chan int, list.threads/2)
+	var ch = make(chan int, list.threads)
 
 	fmt.Printf("🛠  Resolving dependencies for %s 🛠\n", node.formula.Name)
 
@@ -185,9 +184,6 @@ func (list *FormulaList) childFirstIterator(node *FormulaNode, fn func(*Formula)
 
 	wg.Wait()
 
-	// some other dependencies may triggered the same formula to be installed.
-	list.waitForAllChildrenToBeWorked(node)
-
 	// After all the children are done, we can call the callback
 	fmt.Printf("🎉 Completed all dependencies of %s 🎉\n", node.formula.Name)
 	fn(node.formula)
@@ -202,7 +198,7 @@ func (list *FormulaList) parentFirstIterator(node *FormulaNode, fn func(*Formula
 	fn(node.formula)
 
 	var wg sync.WaitGroup
-	var ch = make(chan int, list.threads/2)
+	var ch = make(chan int, list.threads)
 
 	for _, child := range node.children {
 		wg.Add(1)
@@ -249,7 +245,11 @@ func doGET(url string) (*http.Response, error) {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{
+		Timeout: time.Second * 5,
+	}
+
+	resp, err := client.Do(req)
 
 	if err != nil {
 		return nil, err
