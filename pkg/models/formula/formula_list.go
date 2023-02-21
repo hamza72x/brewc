@@ -1,91 +1,47 @@
 package formula
 
-import "sync"
+import (
+	"net/http"
+	"sync"
+	"time"
+)
 
-// FormulaList represents a list of formulas.
-// it will be linked-list
+type formulaWorkStatus int
+
+const (
+	notStarted formulaWorkStatus = iota
+	working
+	worked
+)
+
 type FormulaList struct {
-	head *FormulaNode
-	tail *FormulaNode
+	count int
+
+	root *FormulaNode
+
 	// key string: formula name
-	hasDataMap map[string]bool
-	count      int
+	workStatuses map[string]formulaWorkStatus
+
 	// lock is used to make the list thread-safe
-	lock sync.RWMutex
+	lock *sync.RWMutex
+
+	httpClient *http.Client
+
+	threads int
 }
 
-// FormulaNode represents a node in the linked-list
-type FormulaNode struct {
-	Formula *Formula
-	prev    *FormulaNode
-	next    *FormulaNode
-}
-
-// NewFormulaList returns a new FormulaList instance.
-func NewFormulaList() *FormulaList {
-	return &FormulaList{
-		hasDataMap: make(map[string]bool),
-	}
-}
-
-func (list *FormulaList) HasFormula(f *Formula) bool {
-	list.lock.RLock()
-	defer list.lock.RUnlock()
-	if _, ok := list.hasDataMap[f.Name]; ok {
-		return true
-	}
-	return false
-}
-
-func (list *FormulaList) Count() int {
-	return list.count
-}
-
-func (list *FormulaList) Add(formula *Formula) {
-	list.lock.Lock()
-	defer list.lock.Unlock()
-
-	newNode := &FormulaNode{
-		Formula: formula,
+func newFormulaList(mainFormula *Formula) *FormulaList {
+	list := &FormulaList{
+		workStatuses: make(map[string]formulaWorkStatus),
+		lock:         &sync.RWMutex{},
+		root:         newFormulaNode(mainFormula),
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 
-	if list.head == nil {
-		list.head = newNode
-		list.tail = newNode
-	} else {
-		list.tail.next = newNode
-		newNode.prev = list.tail
-		list.tail = newNode
-	}
-
-	list.hasDataMap[formula.Name] = true
+	list.workStatuses[mainFormula.Name] = notStarted
 	list.count++
-}
 
-// Iterate iterate over the full linked-list
-// and uses the callback function to do something
-// with the data
-func (list *FormulaList) Iterate(callback func(index int, formula *Formula)) {
-	current := list.head
-	index := 0
-
-	for current != nil {
-		callback(index, current.Formula)
-		current = current.next
-		index++
-	}
-}
-
-// IterateReverse iterate over the full linked-list
-// and uses the callback function to do something
-// with the data
-func (list *FormulaList) IterateReverse(callback func(index int, formula *Formula)) {
-	current := list.tail
-	index := 0
-
-	for current != nil {
-		callback(index, current.Formula)
-		current = current.prev
-		index++
-	}
+	return list
 }

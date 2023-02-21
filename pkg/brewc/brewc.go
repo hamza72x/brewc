@@ -48,7 +48,10 @@ func New(args *models.OptionalArgs) *BrewC {
 // Example: InstallFormula("ffmpeg")
 func (b *BrewC) InstallFormula(name string) error {
 
-	list, err := b.GetFormulaListV2(name, false)
+	list, err := formula.GetFormulaList(name, &formula.GetFormulaListOpts{
+		IncludeInstalled: false,
+		DependencyLevel:  -1,
+	})
 
 	if err != nil {
 		return err
@@ -70,7 +73,16 @@ func (b *BrewC) InstallFormula(name string) error {
 // Example: UninstallFormula("ffmpeg")
 func (b *BrewC) UninstallFormula(name string) error {
 
-	list, err := b.GetFormulaListV2(name, true)
+	if !b.args.DeleteUnusedDependencies {
+		return b.brew.UninstallFormula(name, b.args.Verbose)
+	}
+
+	fmt.Println("bo???????????????")
+
+	list, err := formula.GetFormulaList(name, &formula.GetFormulaListOpts{
+		IncludeInstalled: true,
+		DependencyLevel:  1,
+	})
 
 	if err != nil {
 		return err
@@ -78,18 +90,12 @@ func (b *BrewC) UninstallFormula(name string) error {
 
 	fmt.Println("")
 
-	if b.args.DeleteUnusedDependencies {
-		list.IterateParentFirst(b.threads, func(f *formula.Formula) {
-			fmt.Printf("%s Removing: %s\n", constant.GreenArrow, f.Name)
-			if err := b.brew.UninstallFormula(f.Name, b.args.Verbose); err != nil && b.args.Verbose {
-				fmt.Printf("%s Error uninstalling formula: %s\n", constant.RedArrow, err.Error())
-			}
-		})
-	} else {
-		if err := b.brew.UninstallFormula(name, b.args.Verbose); err != nil {
+	list.IterateParentFirst(b.threads, func(f *formula.Formula) {
+		fmt.Printf("%s Removing: %s\n", constant.GreenArrow, f.Name)
+		if err := b.brew.UninstallFormula(f.Name, b.args.Verbose); err != nil && b.args.Verbose {
 			fmt.Printf("%s Error uninstalling formula: %s\n", constant.RedArrow, err.Error())
 		}
-	}
+	})
 
 	return nil
 }

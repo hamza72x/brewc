@@ -93,23 +93,6 @@ type BottleUrlData struct {
 	Sha256 string `json:"sha256"`
 }
 
-type Installed struct {
-	Version               string              `json:"version"`
-	UsedOptions           *[]string           `json:"used_options"`
-	BuiltAsBottle         bool                `json:"built_as_bottle"`
-	PouredFromBottle      bool                `json:"poured_from_bottle"`
-	Time                  int64               `json:"time"`
-	RuntimeDependencies   []RuntimeDependency `json:"runtime_dependencies"`
-	InstalledAsDependency bool                `json:"installed_as_dependency"`
-	InstalledOnRequest    bool                `json:"installed_on_request"`
-}
-
-type RuntimeDependency struct {
-	FullName         string `json:"full_name"`
-	Version          string `json:"version"`
-	DeclaredDirectly bool   `json:"declared_directly"`
-}
-
 type Urls struct {
 	Stable UrlsStable `json:"stable"`
 	Head   Head       `json:"head"`
@@ -154,7 +137,13 @@ type UsesFromMacoElement struct {
 // IsInstalled returns true if the formula is installed
 // based on the folder existence of /usr/local/Cellar/{name}/{version}
 func (f *Formula) IsInstalled() bool {
-	return util.DoesDirExist(fmt.Sprintf("%s/%s/%s", constant.Get().DirCellar, f.Name, f.Versions.Stable))
+	dirInstalled := fmt.Sprintf("%s/%s/%s", constant.Get().DirCellar, f.Name, f.Versions.Stable)
+
+	if f.Revision > 0 {
+		dirInstalled = fmt.Sprintf("%s/%s/%s_%d", constant.Get().DirCellar, f.Name, f.Versions.Stable, f.Revision)
+	}
+
+	return util.DoesDirExist(dirInstalled)
 }
 
 // GetBottleUrl returns the bottle url of the formula
