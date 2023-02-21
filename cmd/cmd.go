@@ -20,7 +20,9 @@ var rootCmd = &cobra.Command{
 
 // Run executes the root command.
 func Run() {
-	constant.Initialize()
+	archAndCodeName := models.GetArchAndOSName()
+
+	constant.Initialize(archAndCodeName.Architecture)
 
 	err := rootCmd.Execute()
 

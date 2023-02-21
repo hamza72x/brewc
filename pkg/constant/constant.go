@@ -3,6 +3,7 @@ package constant
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/hamza72x/brewc/pkg/util"
 	col "github.com/hamza72x/go-color"
@@ -20,22 +21,27 @@ type Constant struct {
 
 var instance *Constant
 
-func Initialize() {
+func Initialize(arch string) {
 	dirHome, err := os.UserHomeDir()
 
 	if err != nil {
 		panic(err)
 	}
 
+	dirCellar := "/usr/local/Cellar"
+
+	if arch == "arm64" && runtime.GOOS == "darwin" {
+		dirCellar = "/opt/homebrew/Cellar"
+	}
+
 	instance = &Constant{
-		DirCellar:    "/usr/local/Cellar",
+		DirCellar:    dirCellar,
 		DirCaches:    dirHome + "/Library/Caches/Homebrew",
 		DirDownloads: dirHome + "/Library/Caches/Homebrew/downloads",
 	}
 
 	// create dirs
 	var dirs = []string{
-		instance.DirCellar,
 		instance.DirCaches,
 		instance.DirDownloads,
 	}
